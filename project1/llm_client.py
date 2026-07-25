@@ -41,7 +41,13 @@ class HelloAgentsLLM:
                 messages = messages,
                 temperature = temperature,
                 stream=True
-            )                         # response 是一个生成器（或可迭代对象），每次迭代返回一个流式响应块（chunk）。
+            )
+            # OpenAI SDK 要求的是 ChatCompletionMessageParam：role 必须是 "user"、"assistant"、"system" 等特定字面值，并且不同角色有不同字段。content 也不一定是字符串，还可能是多模态内容列表或 None。
+            # 所以这里会标黄，因为dict[str, str] 对键和角色的约束太宽，对值的约束又太窄。
+            # PyCharm 会警告，因为它们无法从这个宽泛类型证明消息满足 SDK 的严格结构。
+            # 所以直接把消息声明成 list[ChatCompletionMessageParam] 最合适。
+
+            # response 是一个生成器（或可迭代对象），每次迭代返回一个流式响应块（chunk）。
 
             # chat：代表“对话”功能模块。
             # completions：代表“补全”子模块，专用于聊天补全（Chat Completion）。
