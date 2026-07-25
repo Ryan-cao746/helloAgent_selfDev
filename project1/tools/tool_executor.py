@@ -1,0 +1,27 @@
+from typing import Dict, Any
+from collections.abc import Callable
+
+class ToolExecutor:
+    def __init__(self):
+        self.tools: Dict[str, Dict[str, Any]] = {}
+
+    def register_tool(self, name:str, description:str, func:Callable):
+        """
+        向工具箱中注册一个新工具
+        """
+        if name in self.tools:
+            print(f"警告：工具'{name}'已存在，将被覆盖")
+        self.tools[name] = {"description":description, "func":func}
+        print(f"工具'{name}'已注册")
+
+    def get_tool(self, name:str):
+        """
+        根据名称获取一个工具的执行函数
+        """
+        return self.tools.get(name, {}).get("func")
+
+    def get_available_tools(self) -> str:
+        """
+        获取所有工具的格式化描述字符串
+        """
+        return "\n".join([f"-{name}:{info['description']}" for name, info in self.tools.items()])
