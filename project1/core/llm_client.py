@@ -4,6 +4,7 @@ from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv  # 让你可以把配置项写在 .env 文件里，然后在代码中一键加载，让程序像读取系统环境变量一样去使用它们
 from typing import List, Dict
 
+# llm统一简化接口
 
 load_dotenv() #加载.env文件中的内容
 

@@ -1,5 +1,5 @@
-from project1.llm_client import HelloAgentsLLM
-from project1.prompt_template import REACT_PROMPT_TEMPLATE
+from project1.core.llm_client import HelloAgentsLLM
+from project1.agents.prompt_template import REACT_PROMPT_TEMPLATE
 from project1.tools.tool_executor import ToolExecutor
 import re #正则表达式操作模块
 
@@ -33,6 +33,28 @@ class ReActAgent:
             if not response_text:
                 print("错误:LLM未能有效响应。")
                 break
+
+            thought, action = self._parse_output(response_text) #根据模型的回答解析thought, action
+
+            # 如果模型的回答的action里有tool_calls，那么llm响应解析会解析出tool_calls并执行tools
+
+            if thought:
+                print(f"思考:{thought}")
+            if not action:
+                print("警告，未能解析出有效的action，流程终止")
+                break
+
+            # 4.执行Action
+            if action.startswith("Finish"):
+                # 如果是Finish指令，提取最终答案并结束
+                final_answer = re.match(r"Finish\[(.*)]", action).group(1)
+                print(f"最终答案:{final_answer}")
+                return final_answer
+
+            tool_name, tool_input = self._parse_action(action) # 根据action解析tool_calls的相关信息tool_name,tool_input
+            if not tool_name or not tool_input:
+                # ... 处理无效的Action格式 ...
+                continue
 
     def _parse_output(self, text:str):
         """
