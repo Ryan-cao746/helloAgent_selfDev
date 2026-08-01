@@ -6,7 +6,7 @@ from project1.core.config import Config
 from project1.core.llm_client import HelloAgentsLLM
 from project1.core.message import Message
 
-
+# Agent这个抽象基类默认不包含tool_registry。所以说次级方法在继承时需要在超类的init方法外面加上这个字段
 class Agent(ABC):
 
     def __init__(

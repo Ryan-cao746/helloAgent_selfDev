@@ -51,3 +51,40 @@ class ToolRegistry:
             符合 OpenAI function calling 标准的 schema
         """
         parameters = self.get_parameters
+
+    def execute_tool_call(self, tool_name: str, parameters: str) -> str:
+        """执行工具调用"""
+        try:
+            # 这里改了，全用自动参数解析
+            param_dict = self._parse_tool_parameters(parameters)
+            tool = self.get_tool(tool_name)
+            if not tool:
+                return f"未找到工具 {tool_name}"
+            result = tool.run(param_dict)
+            return f"工具{tool_name} 执行结果:\n {result}"
+        except Exception as e:
+            return f"工具执行失败:{str(e)}"
+
+    def _parse_tool_parameters(self, parameters:str) -> dict:
+        """智能解析工具参数"""
+        param_dict = {} # 返回的是一个参数字典。这是很有趣的方法
+
+        if '=' in parameters:
+            # 匹配格式:key=value这种情况
+            if ',' not in parameters:
+                # 多参数情况，例如action=search,query=Python
+                pairs = parameters.split(',') # 根据逗号划分捕获组
+                for pair in pairs:
+                    if '=' in pair:
+                        key, value = pair.split('=', 1) # 根据等号划分键和值，最多划分一次
+                        param_dict[key.strip()] = value.strip()
+            else:
+                # 单参数
+                key, value = parameters.split('=', 1)  # 根据等号划分键和值，最多划分一次
+                param_dict[key.strip()] = value.strip()
+        else:
+            print("参数格式不正确")
+
+        return param_dict
+
+

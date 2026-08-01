@@ -98,7 +98,9 @@ class SimpleAgent(Agent):
                 tool_results = []
                 clean_response = response
                 for tool_call in tool_calls:
-                    result = self._execute_tool_call(tool_call['tool_name'], tool_call['parameters']) # 执行工具调用
+                    if self.tool_registry is None:
+                        return "似乎不存在工具注册表"
+                    result = self.tool_registry.execute_tool_call(tool_call['tool_name'], tool_call['parameters']) # 执行工具调用
                     tool_results.append(result) # 添加结果
                     clean_response = clean_response.replace(tool_call['original'], result) # 把llm响应串中的所有工具调用格式去掉
                 # 记录消息，
@@ -143,44 +145,6 @@ class SimpleAgent(Agent):
             })
 
         return tool_calls
-
-    def _execute_tool_call(self, tool_name: str, parameters: str) -> str:
-        """执行工具调用"""
-        if not self.tool_registry:
-            return f"错误，未配置工具注册表"
-
-        try:
-            # 这里改了，全用自动参数解析
-            param_dict = self._parse_tool_parameters(parameters)
-            tool = self.tool_registry.get_tool(tool_name)
-            if not tool:
-                return f"未找到工具 {tool_name}"
-            result = tool.run(param_dict)
-            return f"工具{tool_name} 执行结果:\n {result}"
-        except Exception as e:
-            return f"工具执行失败:{str(e)}"
-
-    def _parse_tool_parameters(self, parameters:str) -> dict:
-        """智能解析工具参数"""
-        param_dict = {} # 返回的是一个参数字典。这是很有趣的方法
-
-        if '=' in parameters:
-            # 匹配格式:key=value这种情况
-            if ',' not in parameters:
-                # 多参数情况，例如action=search,query=Python
-                pairs = parameters.split(',') # 根据逗号划分捕获组
-                for pair in pairs:
-                    if '=' in pair:
-                        key, value = pair.split('=', 1) # 根据等号划分键和值，最多划分一次
-                        param_dict[key.strip()] = value.strip()
-            else:
-                # 单参数
-                key, value = parameters.split('=', 1)  # 根据等号划分键和值，最多划分一次
-                param_dict[key.strip()] = value.strip()
-        else:
-            print("参数格式不正确")
-
-        return param_dict
 
 
 

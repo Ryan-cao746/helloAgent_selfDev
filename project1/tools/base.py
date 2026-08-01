@@ -46,12 +46,9 @@ class Tool(ABC):
 
         params_description = "\n".join(params_text)
         return f"""
-        
         ## 工具信息
         name: {self.name}
         description: {params_description}
-        
         ## 参数信息
         {params_description}
-        
         """
