@@ -1,8 +1,7 @@
 # 定义了统一的消息格式，便于智能体和模型之间信息传递的标准化，还有用于历史记录的功能
 from datetime import datetime
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Literal
 
-from dotenv.variables import Literal
 from pydantic import BaseModel #A base class for creating Pydantic models.
 
 MessageRole = Literal["user", "assistant", "system", "tool"] # 定义了消息，只能取几个类型之一个

@@ -27,13 +27,16 @@ class ToolRegistry:
         }
         print(f"工具'{name}'已被注册")
 
+    def get_tool(self, name:str) -> Tool:
+        return self._tools[name]
+
     # 工具发现与管理机制
     def get_tools_description(self) -> str:
         """获得所有工具的描述字符串，合并为统一的描述字符串"""
         descriptions = []
         # 获取Tool对象描述
         for tool in self._tools.values(): #遍历字典的值序列
-            descriptions.append(f"- {tool.name}: {tool.description}")
+            descriptions.append(tool.get_full_description()) # 用我写的新函数，获取完整描述
         # 获取function对象描述
         for name, info in self._functions.items():
             descriptions.append(f"- {name}: {info['description']}") #name取键，info取值，再取info的description字段

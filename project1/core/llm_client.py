@@ -4,6 +4,8 @@ from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv  # 让你可以把配置项写在 .env 文件里，然后在代码中一键加载，让程序像读取系统环境变量一样去使用它们
 from typing import List, Dict
 
+from project1.core.message import Message
+
 # llm统一简化接口
 
 load_dotenv() #加载.env文件中的内容
@@ -31,7 +33,7 @@ class HelloAgentsLLM:
         # 它负责管理与 OpenAI API 的认证、网络请求等。
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=timeout)
 
-    def think(self, messages:List[Dict[str, str]], temperature: float = 0)->str :
+    def think(self, messages:List[Message], temperature: float = 0)->str :
         """
         调用大语言模型进行思考，并返回其响应
         """
@@ -39,7 +41,7 @@ class HelloAgentsLLM:
         try:
             response = self.client.chat.completions.create(
                 model = self.model,
-                messages = messages,
+                messages = [msg.to_dict() for msg in messages], # 用列表推导式硬转
                 temperature = temperature,
                 stream=True
             )
