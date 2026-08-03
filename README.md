@@ -11,3 +11,5 @@ A application sourced from the code of HelloAgent, used for learning
     - 改了client的think，message换成Message类型列表硬转
     - Agent这个抽象基类默认不包含tool_registry。所以说次级方法在继承时需要在超类的init方法外面加上这个字段
     - 完成了ReAct。将工具参数提取和工具调用方法统一移到了register中。修改了文档提供的对ReAct的长短期记忆系统
+- 截至2026.8.4
+    - 部分完成了记忆系统，自己借助AI写了TF-IDF向量化检索
