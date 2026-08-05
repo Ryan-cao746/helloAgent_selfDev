@@ -1,4 +1,4 @@
-from project1.agents.react_agent import ReactAgent
+from project1.agents.agent_types.react_agent import ReactAgent
 from project1.core.llm_client import HelloAgentsLLM
 from dotenv import load_dotenv
 

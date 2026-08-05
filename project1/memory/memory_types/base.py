@@ -3,11 +3,11 @@ from typing import List
 
 from datetime import datetime
 
-from project1.memory.memory_config import MemoryConfig
+from project1.config.memory_config import MemoryConfig
 from project1.memory.memory_item import MemoryItem
 
 class BaseMemory(ABC):
-    def __init__(self, memory_config:MemoryConfig):
+    def __init__(self, memory_config:MemoryConfig = None):
         self.memory_config = memory_config
         self.memories: List[MemoryItem] = []
 

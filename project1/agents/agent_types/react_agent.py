@@ -1,11 +1,12 @@
 from typing import Optional
 import re
-from project1.agents.prompt_template import REACT_PROMPT_TEMPLATE
-from project1.core.agent import Agent
-from project1.core.config import Config
+from project1.context.prompt_template import REACT_PROMPT_TEMPLATE
+from project1.agents.agent_types.base import Agent
+from project1.config.config import Config
 from project1.core.llm_client import HelloAgentsLLM
 from project1.core.message import Message
 from project1.tools.registry import ToolRegistry
+from project1.supportive_functions.output_phrasing import phrase_output, phrase_action
 
 
 class ReactAgent(Agent):
@@ -49,11 +50,11 @@ class ReactAgent(Agent):
             response = self.llm_client.think([Message(content=prompt, role="user")], **kwargs) # 这里由于本人的私下修改，导致think必须用Message类
 
             # 解析输出。先解析出thought和action，再从action中解析出tool_call
-            thought, action = self._phrase_output(response)
+            thought, action = phrase_output(response)
 
             # 检查完成条件
             if action and action.startswith("Finish"):
-                final_answer = self._phrase_action(action)[1] # 元组取第二个，即方括号里的
+                final_answer = phrase_action(action)[1] # 元组取第二个，即方括号里的
                 self.add_message(Message(content=input_text, role="user")) # 计入长期记忆
                 self.add_message(Message(content=final_answer, role="assistant"))
                 return final_answer
@@ -74,22 +75,3 @@ class ReactAgent(Agent):
         self.add_message(Message(content=input_text, role="user"))
         self.add_message(Message(content=final_answer, role="assistant"))
         return final_answer
-
-    # 两个字符串模式匹配的工具方法
-    def _phrase_output(self, text:str):
-        """提取thought和action"""
-        # Thought要匹配到Action:或文本末尾
-        thought_match = re.search(r"Thought:\s*(.*?)(?=Action:|$)", text, re.DOTALL) # 跳过 Thought: 后面可能存在的空白。非贪婪、条件地捕获内容直到Action:或文末。re.DOTALL指让正则表达式中的点号（.）匹配包括换行符（\n）在内的任意字符。
-
-        # Action要匹配到文本末尾
-        action_match = re.search(r"Action:\s*(.*?)$", text, re.DOTALL)
-        thought = thought_match.group(1).strip() if thought_match else None
-        action = action_match.group(1).strip() if action_match else None
-        return thought, action
-
-    def _phrase_action(self, action_text:str):
-        """从action里提取tool_calls"""
-        match = re.match(r"(\w+)\[(.*)]", action_text, re.DOTALL) # 方括号前和后的分别为两个捕获组
-        if match:
-            return match.group(1), match.group(2)
-        return None, None

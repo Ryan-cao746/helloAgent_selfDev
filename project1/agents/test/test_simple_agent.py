@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 
-from project1.agents.simple_agent import SimpleAgent
+from project1.agents.agent_types.simple_agent import SimpleAgent
 from project1.core.llm_client import HelloAgentsLLM
 from project1.tools.built_in.example import ExampleTool
 from project1.tools.registry import ToolRegistry

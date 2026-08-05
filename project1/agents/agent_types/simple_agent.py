@@ -1,8 +1,8 @@
 # 最基础的agent实现
 from typing import Optional, List
 import re
-from project1.core.agent import Agent
-from project1.core.config import Config
+from project1.agents.agent_types.base import Agent
+from project1.config.config import Config
 from project1.core.message import Message
 from project1.core.llm_client import HelloAgentsLLM
 from project1.tools.registry import ToolRegistry

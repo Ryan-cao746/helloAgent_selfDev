@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod #Python中的抽象类
 from typing import Optional, List
 
-from project1.core.config import Config
+from project1.config.config import Config
 from project1.core.llm_client import HelloAgentsLLM
 from project1.core.message import Message
 

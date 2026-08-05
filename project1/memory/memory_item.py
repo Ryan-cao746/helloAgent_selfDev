@@ -14,7 +14,8 @@ class MemoryItem(BaseModel):
     content: str
     importance: float
     created_at: datetime = None
-    expires_at: datetime = None
+    # 显式设置默认值为 None，明确告知 Pydantic 该字段是可选的
+    expires_at: datetime | None = None
 
     def __init__(self,
                  id:str,

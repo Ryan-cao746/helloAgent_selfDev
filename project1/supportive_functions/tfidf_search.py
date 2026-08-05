@@ -1,4 +1,5 @@
 # TF-IDF向量化检索
+# 我让这些函数返回的是所有项的相似度评分，没有排序等东西，因为要计算综合评分，所以不能忽略某一项
 from typing import List
 
 import jieba
@@ -31,7 +32,7 @@ def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
         # sublinear_tf=True,             # 可选：对数压缩词频
     )
 
-    tfidf_matrix = vectorizer.fit_transform(tokenized_docs)
+    tfidf_matrix = vectorizer.fit_transform(tokenized_docs)  # 向量化
 
     print(f"矩阵形状: {tfidf_matrix.shape}")
     print(f"词典大小: {len(vectorizer.vocabulary_)}")
@@ -50,16 +51,12 @@ def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
 
     results = search(query, vectorizer, tfidf_matrix, top_k=3)
 
-    print("检索结果（按相似度排序）:")
-    for rank, (idx, sim) in enumerate(results, 1):
-        print(f"  第{rank}名: 文档{idx + 1}，相似度={sim:.4f}")
-        print(f"         内容: {memories_str_list[idx]}")
-
-    return [result[1] for result in results]    # 结果的第二元是相似度
+    return [float(result) for result in results]  # 结果的第二元是相似度。但是返回的类型是np.float64，可以转换一下
 
 # Memory类型形式的查询
 def try_tfidf_search_in_memory(query:str, memories:List[MemoryItem]) -> List[float]:
-    memories_str_list = [memory.content for memory in memories]  # 获取str形式的列表
+
+    memories_str_list = [memory.content for memory in memories] # 获取str形式的列表
     return try_tfidf_search(query, memories_str_list)
 
 
@@ -87,12 +84,12 @@ def search(query, vectorizer, tfidf_matrix, top_k=3):
     query_vector = vectorizer.transform([query_tokenized])
 
     # 计算余弦相似度
-    similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()
+    similarities = cosine_similarity(query_vector, tfidf_matrix).flatten()  # 计算余弦相似度
 
     # 排序取 Top-K
-    top_indices = np.argsort(similarities)[::-1][:top_k]
+    #top_indices = np.argsort(similarities)[::-1][:top_k]
 
-    return [(idx, similarities[idx]) for idx in top_indices]
+    return similarities
 
 # 测试检索
 if __name__ == '__main__':
@@ -107,4 +104,5 @@ if __name__ == '__main__':
         "支持向量机是一种经典的机器学习算法",
     ]
 
-    try_tfidf_search(query, documents)
+    res = try_tfidf_search(query, documents)
+    print(res)

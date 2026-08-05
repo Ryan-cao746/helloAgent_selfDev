@@ -5,6 +5,9 @@ class MemoryConfig(BaseModel):
 
     working_memory_capacity: int = 0
     working_memory_ttl: int = 0
+    database_path: str = ""
+    qdrant_url: str = ""
+    qdrant_api_key: str = ""
 
     def __init__(self,
                  working_memory_capacity:int = 0,
