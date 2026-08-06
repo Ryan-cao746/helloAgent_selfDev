@@ -1,12 +1,18 @@
 from abc import ABC, abstractmethod
 
+from project1.context.base import ContextManagerBase
 from project1.core.llm_client import HelloAgentsLLM
 from typing import Optional
 from project1.config.config import Config
+from project1.memory.memory_manager import MemoryManager
 from project1.tools.registry import ToolRegistry
 
 
 class BaseComplexAgent(ABC):
+
+    # 接口写在这里了，必须赋值
+    memory_manager: MemoryManager
+    context_manager: ContextManagerBase
 
     def __init__(
             self,

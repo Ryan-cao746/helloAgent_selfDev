@@ -12,7 +12,7 @@ class MemoryItem(BaseModel):
 
     id: str = None
     content: str
-    importance: float
+    importance: float = 1.0
     created_at: datetime = None
     # 显式设置默认值为 None，明确告知 Pydantic 该字段是可选的
     expires_at: datetime | None = None
@@ -20,7 +20,7 @@ class MemoryItem(BaseModel):
     def __init__(self,
                  id:str,
                  content:str,
-                 importance:float,
+                 importance:float = 1.0,
                  created_at:datetime = None, # 创建的时间戳
                  expires_at:datetime = None  # 过期的时间戳
                  ):

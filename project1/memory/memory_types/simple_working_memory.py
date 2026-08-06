@@ -5,7 +5,7 @@ from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_types.base import BaseMemory
 
 
-class SimpleMemory(BaseMemory):
+class SimpleWorkingMemory(BaseMemory):
     def __init__(self):
         """调用父类方法，仅仅初始化记忆存储列表，不用config"""
         super().__init__()

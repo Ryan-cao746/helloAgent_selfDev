@@ -35,3 +35,6 @@ class BaseMemory(ABC):
         for memory_item in self.memories:
             if current_idx >= self.memory_config.working_memory_capacity:
                 self.memories.remove(memory_item)
+
+    def get_all_memories(self) -> List[MemoryItem]:
+        return self.memories

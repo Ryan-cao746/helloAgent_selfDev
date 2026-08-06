@@ -29,3 +29,10 @@ A application sourced from the code of HelloAgent, used for learning
         - simple_complex_agent，相当于之前写的react_agent，只不过用了新的架构
     - 所以说后处理模块因为依赖过于灵活，不同的agent有不同的实现方式，所以不解耦
     - 计划基于这些基础设施完成后续的上下文构建和记忆处理系统
+- 2026.8.6
+    - 首先，记忆系统只有在多轮对话的环境下才有用
+    - 所以说，记忆系统和上下文构建系统实际上是一个可选项。于是我在complex_agents基类里并未实际上要求这两个系统是必填的
+    - 因此首要任务是实现一个多轮对话的Agent。工作记忆存在于单轮对话内，而其他记忆类型则是持久化的，活跃于整个程序的生命周期
+    - 完成多轮对话multi_asking_agent配套的记忆和上下文模块advanced_context_manager和simple_episodic_memory
+    - 计划将逻辑高度重复的响应处理模块分离出来
+    - 部分完成了multi_asking_agent
