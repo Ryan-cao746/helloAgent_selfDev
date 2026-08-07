@@ -1,7 +1,7 @@
 from typing import List
 
 from project1.context.base import ContextManagerBase
-from project1.context.prompt_template import REACT_PROMPT_TEMPLATE
+from project1.context.prompt_templates.react_prompt_template import REACT_PROMPT_TEMPLATE
 from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_manager import MemoryManager
 from project1.tools.registry import ToolRegistry
@@ -11,7 +11,7 @@ class AdvancedContextManager(ContextManagerBase):
     def __init__(
             self,
             memory_manager: MemoryManager,
-            tool_registry: ToolRegistry,
+            tool_registry: ToolRegistry = None,
             prompt_template: str = REACT_PROMPT_TEMPLATE
     ):
         super().__init__(memory_manager, tool_registry, prompt_template)

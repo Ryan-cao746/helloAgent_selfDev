@@ -9,6 +9,7 @@ from project1.memory.memory_manager import MemoryManager
 from project1.memory.memory_types.simple_episodic_memory import SimpleEpisodicMemory
 from project1.memory.memory_types.simple_working_memory import SimpleWorkingMemory
 from project1.tools.registry import ToolRegistry
+from project1.user_input_interface.base import UserInputInterface
 
 
 class MultiAskingAgent(BaseComplexAgent):
@@ -16,7 +17,9 @@ class MultiAskingAgent(BaseComplexAgent):
             self,
             name: str,
             llm_client: HelloAgentsLLM,
+            user_input_interface: UserInputInterface,
             max_ask:int = 5,
+            max_step:int = 5,
             tool_registry: ToolRegistry = None,
             system_prompt: str = None,
             config: Config = None,
@@ -29,6 +32,8 @@ class MultiAskingAgent(BaseComplexAgent):
             system_prompt=system_prompt,
             config=config
         )
+        self.user_input_interface=user_input_interface
+
         # 初始化记忆系统，启动简单工作记忆和简单情景记忆
         self.memory_manager=MemoryManager()
         self.memory_manager.add_new_memory_type(type="simple_working", base_memory=SimpleWorkingMemory())
@@ -36,10 +41,14 @@ class MultiAskingAgent(BaseComplexAgent):
 
         self.context_manager=AdvancedContextManager(self.memory_manager, self.tool_registry)
         self.max_ask=max_ask
+        self.max_step=max_step
 
-    def run(self, input_text: str, **kwargs) -> str:
+    def run(self, **kwargs) -> str:     # 这个run直接从用户获取输入
         """这个场景下run方法是单论对话内的情况。区别或许仅仅在于更复杂的记忆系统"""
-        current_ask = 0;
+        current_ask = 0
         while current_ask < self.max_ask:
             current_ask += 1
+            current_step = 0    # 单论llm调用序列
             self.memory_manager.clear(type="simple_working")    # 每一轮对话清除工作记忆
+            input_text = self.user_input_interface.get_input_text() # 获取用户输入
+            

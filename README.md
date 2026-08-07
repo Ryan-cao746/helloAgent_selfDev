@@ -36,3 +36,7 @@ A application sourced from the code of HelloAgent, used for learning
     - 完成多轮对话multi_asking_agent配套的记忆和上下文模块advanced_context_manager和simple_episodic_memory
     - 计划将逻辑高度重复的响应处理模块分离出来
     - 部分完成了multi_asking_agent
+- 2026.8.7
+    - 正在做记忆摘要系统
+    - 记忆系统要大改，必须将存储结构改成以id为主键的字典
+    - 其他改动太多，不想写了

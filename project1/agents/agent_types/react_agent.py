@@ -1,6 +1,5 @@
 from typing import Optional
-import re
-from project1.context.prompt_template import REACT_PROMPT_TEMPLATE
+from project1.context.prompt_templates.react_prompt_template import REACT_PROMPT_TEMPLATE
 from project1.agents.agent_types.base import Agent
 from project1.config.config import Config
 from project1.core.llm_client import HelloAgentsLLM

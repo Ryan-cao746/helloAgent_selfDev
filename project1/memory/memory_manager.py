@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Literal
 
 from project1.config.memory_config import MemoryConfig
 from project1.memory.memory_item import MemoryItem
@@ -21,13 +21,14 @@ class MemoryManager:
 
         self.memory_types: Dict[str, BaseMemory] = {}
 
-    def add(self, type:str, content:str):
+    def add(self, type:str, content:str, role:Literal["user", "assistant", "tool"]):
         """添加记忆的统一方法"""
         memory = MemoryItem(
             id = f"{type}-{datetime.now()}",
             content = content,
             importance= 1,   # 没有做重要性筛选
-            created_at = datetime.now()
+            created_at = datetime.now(),
+            role=role
         )
 
         if not type in self.memory_types:
@@ -52,3 +53,5 @@ class MemoryManager:
 
     def get_all_by_type(self, type:str) -> List[MemoryItem]:
         return self.memory_types[type].get_all_memories()
+
+

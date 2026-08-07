@@ -33,7 +33,7 @@ class SimpleComplexAgent(BaseComplexAgent):
             print(f"-----第{current_step}步-----")
 
             # 提示词构建
-            prompt = self.context_manager.build(input_text)
+            prompt = self.context_manager.build(input_text=input_text, **kwargs)
 
             # 调用llm
             response = self.llm_client.think([Message(content=prompt, role="user")], **kwargs)
@@ -41,8 +41,8 @@ class SimpleComplexAgent(BaseComplexAgent):
             thought, action = phrase_output(response)
             if action and action.startswith("Finish"):
                 final_answer = phrase_action(action)[1] # 元组取第二个，即方括号里的
-                self.memory_manager.add(type="simple_working", content=input_text)
-                self.memory_manager.add(type="simple_working", content=final_answer)
+                self.memory_manager.add(type="simple_working", content=input_text, role="user")
+                self.memory_manager.add(type="simple_working", content=final_answer, role="assistant")
                 return final_answer
 
             if action:
@@ -50,13 +50,13 @@ class SimpleComplexAgent(BaseComplexAgent):
                 if self.tool_registry is None:
                     return "似乎不存在工具注册表"
                 result = self.tool_registry.execute_tool_call(tool_name, tool_input)
-                self.memory_manager.add(type="simple_working", content=input_text)
-                self.memory_manager.add(type="simple_working", content=result)
+                self.memory_manager.add(type="simple_working", content=input_text, role="user")
+                self.memory_manager.add(type="simple_working", content=result, role="tool")
             else:
                 print("似乎不存在工具调用")
 
         # 达到最大步数
         final_answer = "已达到最大迭代次数，无法完成任务。"
-        self.memory_manager.add(type="simple_working", content=input_text)
-        self.memory_manager.add(type="simple_working", content=final_answer)
+        self.memory_manager.add(type="simple_working", content=input_text, role="user")
+        self.memory_manager.add(type="simple_working", content=final_answer, role="assistant")
         return final_answer

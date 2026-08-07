@@ -18,3 +18,7 @@ def phrase_action(action_text:str):
     if match:
         return match.group(1), match.group(2)
     return None, None
+
+def phrase_response(text:str):
+
+    thought, action = phrase_action(text)

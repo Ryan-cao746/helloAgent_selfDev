@@ -1,6 +1,6 @@
 
 from project1.context.base import ContextManagerBase
-from project1.context.prompt_template import REACT_PROMPT_TEMPLATE
+from project1.context.prompt_templates.react_prompt_template import REACT_PROMPT_TEMPLATE
 from project1.memory.memory_manager import MemoryManager
 from project1.tools.registry import ToolRegistry
 
@@ -14,7 +14,7 @@ class SimpleContextManager(ContextManagerBase):
             ):
         super().__init__(memory_manager, tool_registry, prompt_template)
 
-    def build(self, input_text:str) -> str:
+    def build(self, input_text:str, **kwargs) -> str:
 
         if self.tool_registry:
             tool_description = self.tool_registry.get_tools_description()  # 获取关于所有工具的详细描述

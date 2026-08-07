@@ -1,5 +1,6 @@
 # 记忆条目
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -11,6 +12,7 @@ class MemoryItem(BaseModel):
     """
 
     id: str = None
+    role:Literal["user", "assistant", "tool"] = "user"
     content: str
     importance: float = 1.0
     created_at: datetime = None
@@ -21,6 +23,7 @@ class MemoryItem(BaseModel):
                  id:str,
                  content:str,
                  importance:float = 1.0,
+                 role:Literal["user", "assistant", "tool"] = "user",
                  created_at:datetime = None, # 创建的时间戳
                  expires_at:datetime = None  # 过期的时间戳
                  ):
@@ -29,5 +32,8 @@ class MemoryItem(BaseModel):
             content = content,
             importance = importance,
             created_at = created_at,
-            expires_at = expires_at
+            expires_at = expires_at,
+            role = role,
         )
+
+
