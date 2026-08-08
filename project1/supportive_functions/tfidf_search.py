@@ -11,6 +11,10 @@ from project1.memory.memory_item import MemoryItem
 
 def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
     #memories_str_list = [memory.content for memory in memories] # 获取str形式的列表
+
+    if memories_str_list.__len__() == 0:
+        return []
+
     tokenized_docs = [chinese_tokenize(doc) for doc in memories_str_list]  # 逐个分词
     print("分词后的文档：")
     for i, doc in enumerate(tokenized_docs, 1):

@@ -41,4 +41,8 @@ A application sourced from the code of HelloAgent, used for learning
     - 记忆系统要大改，必须将存储结构改成以id为主键的字典
     - 其他改动太多，不想写了
 - 2026.8.8
-    - 完成了总结Agent的工程，测试结果良好
+    - 完成了总结Agent
+    - 完成了多轮对话Agent的全部内容，包含一个配置了工作记忆和情景记忆的记忆系统。主要loop文件在project1/complex_agents/types/multi_asking_agent/multi_asking_agent内
+    - 这个Agent配备两个子Agent，一个负责用户交互，另一个负责整理记忆
+    - 注意，现在记忆系统的manager默认通过init的配置选择是否启用工作记忆和情景记忆，且工作记忆和情景记忆的字典键值默认为 working 和 episodic，这个默认的规则已经嵌入了工程的各个系统和环节，不易修改
+    - 以后打算做语义记忆，并且增强工具配置

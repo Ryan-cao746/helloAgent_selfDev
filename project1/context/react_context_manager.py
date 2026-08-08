@@ -1,11 +1,13 @@
+from typing import List
 
 from project1.context.base import ContextManagerBase
 from project1.context.prompt_templates.react_prompt_template import REACT_PROMPT_TEMPLATE
+from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_manager import MemoryManager
 from project1.tools.registry import ToolRegistry
 
 # 一个基本上下文构建方法，即模板+历史记录直接赛在一起
-class SimpleContextManager(ContextManagerBase):
+class ReActContextManager(ContextManagerBase):
     def __init__(
             self,
             memory_manager:MemoryManager = None,
@@ -22,10 +24,13 @@ class SimpleContextManager(ContextManagerBase):
             tool_description = "None"
 
         if self.memory_manager:
-            memory_str_list = []
-            for memory in self.memory_manager.memory_types.values(): # 将每个托管的记忆库全部加入提示词
-                for record in memory.memories:
-                    memory_str_list.append(record.content)
+            memory_list:List[MemoryItem] = []
+
+            memory_list.extend(self.memory_manager.get_all_by_type("working"))
+            memory_list.extend(self.memory_manager.search(type="episodic", query=input_text))
+
+            memory_str_list = [memory.content for memory in memory_list]
+
             memory_str = "\n".join(memory_str_list)
         else:
             memory_str = "None"

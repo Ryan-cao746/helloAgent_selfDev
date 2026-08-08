@@ -18,6 +18,8 @@ class SummaryAgent(Agent):
             self,
             llm_client: HelloAgentsLLM,
             memory_manager: MemoryManager,
+            episodic_memory_name:str = "episodic",   # 改为注入名称，防止改名牵一发而动全身
+            working_memory_name:str = "working",
             name: str = "summary_agent",
             debug_mode: bool = False,
     ):
@@ -25,13 +27,15 @@ class SummaryAgent(Agent):
             name,
             llm_client,
         )
+        self.episodic_memory_name = episodic_memory_name
+        self.working_memory_name = working_memory_name
         self.memory_manager = memory_manager
         self.debug_mode = debug_mode
 
     def run(self, input_text: str, **kwargs) -> str:
         """运行。这里提示词需要重做"""
-        selected_episodic_memory = self.memory_manager.get_all_by_type(type="simple_episodic")
-        working_memory = self.memory_manager.get_all_by_type(type="simple_working")
+        selected_episodic_memory = self.memory_manager.get_all_by_type(type=self.episodic_memory_name)
+        working_memory = self.memory_manager.get_all_by_type(type=self.working_memory_name)
 
         selected_episodic_memory_str_list = [f"- 'id':'{memory.id}', 'role':'{memory.role}', 'content':'{memory.content}'" for memory in selected_episodic_memory]
         working_memory_str_list = [f"- 'id':'{memory.id}', 'role':'{memory.role}', 'content':'{memory.content}'" for memory in working_memory]
@@ -64,11 +68,11 @@ class SummaryAgent(Agent):
                 print(f"op_type={op_type},\nid={id},\ncontent={content}\n")
 
             if op_type == "UPDATE":
-                self.memory_manager.update_memory_content(type="simple_episodic", id=id, new_content=content)
+                self.memory_manager.update_memory_content(type=self.episodic_memory_name, id=id, new_content=content)
             elif op_type == "ADD":
-                self.memory_manager.add(type="simple_episodic", content=content, role="assistant")
+                self.memory_manager.add(type=self.episodic_memory_name, content=content, role="assistant")
             elif op_type == "DELETE":
-                self.memory_manager.delete_memory_by_type(type="simple_episodic", id=id)
+                self.memory_manager.delete_memory_by_type(type=self.episodic_memory_name, id=id)
             elif op_type == "NOOP":
                 continue
             else:
@@ -77,7 +81,7 @@ class SummaryAgent(Agent):
         if self.debug_mode:
             print("====== 更改前情景记忆 ======")
             print(selected_episodic_memory_str)
-            episodic_memories = self.memory_manager.get_all_by_type(type="simple_episodic")
+            episodic_memories = self.memory_manager.get_all_by_type(type=self.episodic_memory_name)
             episodic_str_list = [memory.content for memory in episodic_memories]
             print("====== 更改后情景记忆 ======")
             print("\n".join(episodic_str_list))
@@ -86,20 +90,23 @@ class SummaryAgent(Agent):
 
 if __name__ == "__main__":
     memory_manager = MemoryManager()
+    episodic_memory_name = "episodic"
+    working_memory_name = "working"
 
-    memory_manager.add_new_memory_type(type="simple_episodic", base_memory=SimpleEpisodicMemory())
-    memory_manager.add_new_memory_type(type="simple_working", base_memory=SimpleWorkingMemory())
+    memory_manager.add_new_memory_type(type=episodic_memory_name, base_memory=SimpleEpisodicMemory())
+    memory_manager.add_new_memory_type(type=working_memory_name, base_memory=SimpleWorkingMemory())
 
     llm_client = HelloAgentsLLM()
 
-    summary_agent = SummaryAgent(memory_manager=memory_manager, llm_client=llm_client, debug_mode=True)
+    summary_agent = SummaryAgent(memory_manager=memory_manager, llm_client=llm_client, debug_mode=True,
+                                 episodic_memory_name=episodic_memory_name, working_memory_name=working_memory_name)
 
-    memory_manager.add(type="simple_episodic", content="我叫李梅，是一名平面设计师", role="user")
-    memory_manager.add(type="simple_episodic", content="我喝咖啡只加燕麦奶", role="user")
-    memory_manager.add(type="simple_episodic", content="我对坚果过敏", role="user")
+    memory_manager.add(type=episodic_memory_name, content="我叫李梅，是一名平面设计师", role="user")
+    memory_manager.add(type=episodic_memory_name, content="我喝咖啡只加燕麦奶", role="user")
+    memory_manager.add(type=episodic_memory_name, content="我对坚果过敏", role="user")
 
-    memory_manager.add(type="simple_working", content="其实我姓王，不姓李。还有我现在喝咖啡换回全脂牛奶了", role="user")
-    memory_manager.add(type="simple_working", content="收到，我记下了。", role="assistant")
-    memory_manager.add(type="simple_working", content="那帮我看看附近有什么安静的咖啡店吧。", role="user")
+    memory_manager.add(type=working_memory_name, content="其实我姓王，不姓李。还有我现在喝咖啡换回全脂牛奶了", role="user")
+    memory_manager.add(type=working_memory_name, content="收到，我记下了。", role="assistant")
+    memory_manager.add(type=working_memory_name, content="那帮我看看附近有什么安静的咖啡店吧。", role="user")
 
     print(summary_agent.run("default"))

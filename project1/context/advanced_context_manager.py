@@ -20,8 +20,8 @@ class AdvancedContextManager(ContextManagerBase):
 
         if self.memory_manager:
             selected_memories:List[MemoryItem] = []
-            selected_episodic_memory = self.memory_manager.search(type="simple_episodic", query=input_text) # 查询
-            working_memory = self.memory_manager.get_all_by_type(type="simple_working")
+            selected_episodic_memory = self.memory_manager.search(type="episodic", query=input_text) # 查询
+            working_memory = self.memory_manager.get_all_by_type(type="working")
 
             selected_memories.extend(selected_episodic_memory)
             selected_memories.extend(working_memory)

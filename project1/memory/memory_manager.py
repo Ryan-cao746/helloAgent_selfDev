@@ -15,11 +15,26 @@ class MemoryManager:
             self,
             config:MemoryConfig = None,
             user_id:str = "default_user",
+            enable_working_memory:bool = False,
+            enable_episodic_memory:bool = False,
+            working_memory:BaseMemory = None,
+            episodic_memory:BaseMemory = None,
     ):
         self.config = config
         self.user_id = user_id
 
         self.memory_types: Dict[str, BaseMemory] = {}
+
+        if enable_working_memory:
+            if working_memory is None:
+                print("未配置相应的工作记忆类型")
+                return
+            self.memory_types["working"] = working_memory
+        if enable_episodic_memory:
+            if episodic_memory is None:
+                print("未配置相应的情景记忆类型")
+                return
+            self.memory_types["episodic"] = episodic_memory
 
     def add(self, type:str, content:str, role:Literal["user", "assistant", "tool"]):
         """添加记忆的统一方法"""
@@ -60,5 +75,10 @@ class MemoryManager:
 
     def delete_memory_by_type(self, type:str, id:str):
         del self.memory_types[type].memories[id]
+
+    def print_all_memory_by_type(self, type:str):
+        for memory in self.memory_types[type].memories.values():
+            print(f"记忆类型:{type}")
+            print(f"id:{memory.id}, role:{memory.role}, content:{memory.content}")
 
 
