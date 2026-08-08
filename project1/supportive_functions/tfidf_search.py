@@ -1,6 +1,6 @@
 # TF-IDF向量化检索
 # 我让这些函数返回的是所有项的相似度评分，没有排序等东西，因为要计算综合评分，所以不能忽略某一项
-from typing import List
+from typing import List, Dict
 
 import jieba
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -54,13 +54,19 @@ def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
     return [float(result) for result in results]  # 结果的第二元是相似度。但是返回的类型是np.float64，可以转换一下
 
 # Memory类型形式的查询
-def try_tfidf_search_in_memory(query:str, memories:List[MemoryItem]) -> List[float]:
+def try_tfidf_search_in_memory(query:str, memories:Dict[str, MemoryItem]) -> Dict[str, float]:
 
-    memories_str_list = [memory.content for memory in memories] # 获取str形式的列表
-    return try_tfidf_search(query, memories_str_list)
+    memory_list:List[MemoryItem] = list(memories.values())
 
+    memories_str_list = [memory.content for memory in memory_list] # 获取str形式的列表
 
+    res_list = try_tfidf_search(query, memories_str_list)
+    res_dict:Dict[str, float] = {}
 
+    for i in range(memory_list.__len__()):
+        res_dict[memory_list[i].id] = res_list[i]
+
+    return res_dict
 
 def chinese_tokenize(text:str) -> str:
     """使用jieba进行中文分词。"""

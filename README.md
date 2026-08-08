@@ -40,3 +40,5 @@ A application sourced from the code of HelloAgent, used for learning
     - 正在做记忆摘要系统
     - 记忆系统要大改，必须将存储结构改成以id为主键的字典
     - 其他改动太多，不想写了
+- 2026.8.8
+    - 完成了总结Agent的工程，测试结果良好

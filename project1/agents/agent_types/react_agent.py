@@ -60,7 +60,7 @@ class ReactAgent(Agent):
 
             # 执行工具调用
             if action:
-                tool_name, tool_input = self._phrase_action(action)
+                tool_name, tool_input = phrase_action(action)
                 if self.tool_registry is None:
                     return "似乎不存在工具注册表"
                 result = self.tool_registry.execute_tool_call(tool_name, tool_input)

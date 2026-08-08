@@ -11,7 +11,7 @@ class MemoryItem(BaseModel):
     重要的字段：创建时间戳和过期时间戳，ttl的值由config给出
     """
 
-    id: str = None
+    id: str     # 现在id是必填字段
     role:Literal["user", "assistant", "tool"] = "user"
     content: str
     importance: float = 1.0

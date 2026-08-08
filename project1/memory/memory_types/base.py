@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict
 
 from datetime import datetime
 
@@ -9,7 +9,7 @@ from project1.memory.memory_item import MemoryItem
 class BaseMemory(ABC):
     def __init__(self, memory_config:MemoryConfig = None):
         self.memory_config = memory_config
-        self.memories: List[MemoryItem] = []
+        self.memories: Dict[str, MemoryItem] = dict()  # 主键搭配记忆体的形式
 
     @abstractmethod
     def add(self, memory_item:MemoryItem) -> str:
@@ -24,17 +24,18 @@ class BaseMemory(ABC):
     def _expire_old_memories(self):
         """清除过期的记忆"""
         # 如果当前时间大于应该予以清除的时间，则删除该记录
-        for memory_item in self.memories:
-            if memory_item.expires_at > datetime.now():
-                self.memories.remove(memory_item)
-
+        for key, value in self.memories.items():
+            if value.expires_at < datetime.now():
+                del self.memories[key]
     def _remove_low_priority_memories(self):
         """按重要性排序再删除不重要的记忆"""
-        self.memories.sort(key=lambda memory_item: memory_item.importance, reverse=True)
-        current_idx = 0
-        for memory_item in self.memories:
-            if current_idx >= self.memory_config.working_memory_capacity:
-                self.memories.remove(memory_item)
+        memory_list:List[MemoryItem] = []
+        for key, value in self.memories.items():
+            memory_list.append(value)
+        memory_list.sort(key=lambda x: x.importance, reverse=True)
+        for i in range(self.memory_config.working_memory_capacity, len(memory_list)):
+            del self.memories[memory_list[i].id]
 
-    def get_all_memories(self) -> List[MemoryItem]:
+
+    def get_all_memories(self) -> Dict[str, MemoryItem]:
         return self.memories

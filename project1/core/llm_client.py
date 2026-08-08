@@ -14,7 +14,7 @@ class HelloAgentsLLM:
     """
     定制的LLM客户端。用于调用任何兼容OpenAI接口的服务
     """
-    def __init__(self, model:str = None, api_key: str = None, base_url: str = None, timeout:int = None):
+    def __init__(self, model:str = None, api_key: str = None, base_url: str = None, timeout:int = None, debug_mode:bool = False):
         """
         初始化客户端。优先使用传入参数，若未提供则从环境变量加载。
         """
@@ -22,6 +22,7 @@ class HelloAgentsLLM:
         self.api_key = api_key or os.getenv("LLM_API_KEY")
         self.base_url = base_url or os.getenv("LLM_BASE_URL")
         self.timeout = timeout or os.getenv("LLM_TIMEOUT", 60)
+        self.debug_mode = debug_mode
 
         print(self.model)
         print(self.base_url)
@@ -63,7 +64,7 @@ class HelloAgentsLLM:
                 if not chunk.choices:     # 某些分块可能只包含元数据（如 role 定义、finish_reason 等），没有实际的文本内容（choices 为空）。跳过这些无效块，避免后续取 choices[0] 时出错。
                     continue
                 content = chunk.choices[0].delta.content or ""
-                print(content, end="", flush=True)      # 立即刷新输出缓冲区，确保用户可以实时看到每个字，而不是等积累一定量才显示。这是流式输出“打字机效果”的关键。
+                if self.debug_mode: print(content, end="", flush=True)      # 立即刷新输出缓冲区，确保用户可以实时看到每个字，而不是等积累一定量才显示。这是流式输出“打字机效果”的关键。
                 collected_content.append(content)
             print()
             return "".join(collected_content)           # 把本次的文本片段放入列表，用于最后组装完整答案。

@@ -15,11 +15,11 @@ SUMMARY_PROMPT_TEMPLATE = """
 
 ====== 输入格式 ======
 <情景记忆>
-（此处列出若干条相关历史记忆，每条形如 "- user/assistant: 内容"）
+（此处列出若干条相关历史记忆，每条形如 "- "id":"1", "role":"user/assistant", "content":"内容""）
 </情景记忆>
 
 <工作记忆>
-（此处列出最近的对话轮次，每条形如 "- user/assistant: 内容"）
+（此处列出最近的对话轮次，每条形如 "- "id":"1", "role":"user/assistant", "content":"内容""）
 </工作记忆>
 
 ====== 核心任务：拆解与批量操作 ======
@@ -41,22 +41,23 @@ SUMMARY_PROMPT_TEMPLATE = """
 你必须输出一个 **JSON 对象**，包含一个 `operations` 数组。数组中每个元素是一个操作对象，字段如下：
 - `operation`: "ADD" | "UPDATE" | "DELETE" | "NOOP"
 - `summary`: 字符串，精炼描述该条记忆的核心内容（若 NOOP 可写"无变化"）
-- `target_memory`: 字符串，**仅当 UPDATE 或 DELETE 时必填**，需完整复制被操作的情景记忆原文（用于系统精准定位删除/更新）；ADD/NOOP 时填空字符串 ""
+- `target_id`: 字符串，**仅当 UPDATE 或 DELETE 时必填**，需完整复制被操作的情景记忆的id。
 - `reasoning`: 字符串，简要说明推理依据
 
 ====== 多操作示例（关键！） ======
 
 <情景记忆>
-- user: 我叫张三，今年28岁
-- user: 我住在北京
-- user: 我是素食主义者
-- user: 我对花生过敏
+- "id":"1", "role":"user", "content":"我叫张三，今年28岁"
+- "id":"2", "role":"user", "content":"我住在北京"
+- "id":"3", "role":"user", "content":"我是素食主义者"
+- "id":"4", "role":"user", "content":"我对花生过敏"
 </情景记忆>
 
 <工作记忆>
-- user: 我已经改名叫张伟了，而且我搬家到了杭州。对了，我现在不吃素了，可以吃肉。
-- assistant: 好的，信息已更新。
-- user: 对了，推荐一家杭州的火锅店吧。
+- "id":"1", "role":"user", "content":"我已经改名叫张伟了，而且我搬家到了杭州。对了，我现在不吃素了，可以吃肉。"
+- "id":"2", "role":"assistant", "content":"好的，信息已更新。"
+- "id":"3", "role":"user", "content":"对了，推荐一家杭州的火锅店吧。"
+- "id":"4", "role":"user", "content":"我对花生过敏"
 </工作记忆>
 
 你的回答（必须是一个合法的 以<ANSWER></ANSWER>包裹的 JSON）：
@@ -66,31 +67,31 @@ SUMMARY_PROMPT_TEMPLATE = """
     {{
       "operation": "UPDATE",
       "summary": "用户姓名从张三更新为张伟",
-      "target_memory": "user: 我叫张三，今年28岁",
+      "target_id": "1",
       "reasoning": "工作记忆明确改名，需修正旧姓名，年龄28岁保持不变（无需重复操作）。"
     }},
     {{
       "operation": "DELETE",
       "summary": "用户居住地由北京变更为杭州，删除旧地址",
-      "target_memory": "user: 我住在北京",
+      "target_id": "2",
       "reasoning": "新信息直接覆盖旧地址，旧地址失效。"
     }},
     {{
       "operation": "DELETE",
       "summary": "用户饮食由素食改为非素食，删除旧饮食限制",
-      "target_memory": "user: 我是素食主义者",
+      "target_id": "3",
       "reasoning": "新信息明确否定旧饮食习惯，直接删除。"
     }},
     {{
       "operation": "ADD",
       "summary": "用户当前位于杭州，寻求杭州火锅店推荐",
-      "target_memory": "",
+      "target_id": "",
       "reasoning": "工作记忆产生了新的位置关联信息，历史无此记录。"
     }},
     {{
       "operation": "ADD",
       "summary": "用户虽不再素食但仍有花生过敏史，推荐火锅店需绝对避免花生及花生酱",
-      "target_memory": "",
+      "target_id": "",
       "reasoning": "结合历史'对花生过敏'和当前'推荐火锅店'，联合推理衍生出安全警示记忆。"
     }}
   ]

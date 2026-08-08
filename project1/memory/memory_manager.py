@@ -52,6 +52,13 @@ class MemoryManager:
         self.memory_types[type] = base_memory
 
     def get_all_by_type(self, type:str) -> List[MemoryItem]:
-        return self.memory_types[type].get_all_memories()
+        res_dict = self.memory_types[type].get_all_memories()
+        return [res for res in res_dict.values()]
+
+    def update_memory_content(self, type:str, id:str, new_content:str):
+        self.memory_types[type].memories[id].content = new_content
+
+    def delete_memory_by_type(self, type:str, id:str):
+        del self.memory_types[type].memories[id]
 
 

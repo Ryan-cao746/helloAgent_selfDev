@@ -20,7 +20,7 @@ def extract_json_from_answer(text: str) -> dict:
 
 
 def pretty_print_operations(data: dict):
-    """打印 operations 数组中的每条操作"""
+    """打印 operations 数组中的每条操作（适配新格式）"""
     ops = data.get("operations", [])
     if not ops:
         print("没有找到 operations 数组")
@@ -31,13 +31,13 @@ def pretty_print_operations(data: dict):
         print(f"--- 操作 {idx} ---")
         print(f"操作类型: {op.get('operation', 'N/A')}")
         print(f"摘要: {op.get('summary', 'N/A')}")
-        print(f"目标记忆: {op.get('target_memory', 'N/A')}")
+        print(f"目标记忆ID: {op.get('target_id', 'N/A')}")   # 改为此字段
         print(f"推理: {op.get('reasoning', 'N/A')}")
         print()
 
 
 def main():
-    # 示例输入（就是您提供的文本）
+    # 示例输入（使用新格式）
     sample_text = """
 你的回答（必须是一个合法的 JSON）：
 <ANSWER>
@@ -45,33 +45,27 @@ def main():
   "operations": [
     {
       "operation": "UPDATE",
-      "summary": "用户姓名从张三更新为张伟",
-      "target_memory": "user: 我叫张三，今年28岁",
-      "reasoning": "工作记忆明确改名，需修正旧姓名，年龄28岁保持不变（无需重复操作）。"
+      "summary": "用户姓名由李梅更正为王梅，姓改为王，名梅不变；职业平面设计师保持不变",
+      "target_id": "simple_episodic-2026-08-08 17:54:27.093837",
+      "reasoning": "工作记忆明确否定旧姓李，以新信息为准，修正姓名。"
     },
     {
-      "operation": "DELETE",
-      "summary": "用户居住地由北京变更为杭州，删除旧地址",
-      "target_memory": "user: 我住在北京",
-      "reasoning": "新信息直接覆盖旧地址，旧地址失效。"
-    },
-    {
-      "operation": "DELETE",
-      "summary": "用户饮食由素食改为非素食，删除旧饮食限制",
-      "target_memory": "user: 我是素食主义者",
-      "reasoning": "新信息明确否定旧饮食习惯，直接删除。"
+      "operation": "UPDATE",
+      "summary": "咖啡加奶偏好由燕麦奶更新为全脂牛奶",
+      "target_id": "simple_episodic-2026-08-08 17:54:27.093912",
+      "reasoning": "用户明确表示换回全脂牛奶，旧偏好被新偏好取代。"
     },
     {
       "operation": "ADD",
-      "summary": "用户当前位于杭州，寻求杭州火锅店推荐",
-      "target_memory": "",
-      "reasoning": "工作记忆产生了新的位置关联信息，历史无此记录。"
+      "summary": "用户偏好安静的咖啡店",
+      "target_id": "",
+      "reasoning": "工作记忆中用户请求寻找安静咖啡店，隐含长期偏好。"
     },
     {
       "operation": "ADD",
-      "summary": "用户虽不再素食但仍有花生过敏史，推荐火锅店需绝对避免花生及花生酱",
-      "target_memory": "",
-      "reasoning": "结合历史'对花生过敏'和当前'推荐火锅店'，联合推理衍生出安全警示记忆。"
+      "summary": "用户对坚果过敏，推荐咖啡店时需注意避免含坚果成分的食品或饮品",
+      "target_id": "",
+      "reasoning": "结合历史过敏信息与当前咖啡店推荐请求，联合推理出安全注意事项。"
     }
   ]
 }

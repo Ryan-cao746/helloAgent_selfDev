@@ -12,7 +12,7 @@ class SimpleWorkingMemory(BaseMemory):
 
     def add(self, memory_item:MemoryItem):
         """朴素实现"""
-        self.memories.append(memory_item)
+        self.memories[memory_item.id] = memory_item
 
     def retrieve(self, query:str, limit:int=5, **kwargs) -> List[MemoryItem]:
         """无任何具体查询逻辑"""
