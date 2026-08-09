@@ -26,7 +26,7 @@ class ResponsePhraserV1(BaseResponsePhraser):
                 state = "Finish"    # 直接退出循环，相当于报错
                 content = "似乎不存在工具注册表"
             else:
-                content = self.tool_registry.execute_tool_call(tool_name, tool_input)
+                content = self.tool_registry.execute_tool_call_from_text(tool_name, tool_input)
                 state = "Action"
         else:
             state = "Pass"  # 没有工具调用指令，Pass，不退出循环

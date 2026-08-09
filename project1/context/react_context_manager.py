@@ -16,7 +16,13 @@ class ReActContextManager(ContextManagerBase):
             ):
         super().__init__(memory_manager, tool_registry, prompt_template)
 
-    def build(self, input_text:str, **kwargs) -> str:
+    def build(
+            self,
+            input_text:str,
+            working_memory_name:str = None,
+            episodic_memory_name:str = None,
+            **kwargs,
+    ) -> str:
 
         if self.tool_registry:
             tool_description = self.tool_registry.get_tools_description()  # 获取关于所有工具的详细描述
@@ -25,9 +31,13 @@ class ReActContextManager(ContextManagerBase):
 
         if self.memory_manager:
             memory_list:List[MemoryItem] = []
+            working_memory_name = working_memory_name or self.memory_manager.working_memory_name
+            episodic_memory_name = episodic_memory_name or self.memory_manager.episodic_memory_name
 
-            memory_list.extend(self.memory_manager.get_all_by_type("working"))
-            memory_list.extend(self.memory_manager.search(type="episodic", query=input_text))
+            if self.memory_manager.has_memory_type(working_memory_name):
+                memory_list.extend(self.memory_manager.get_all_by_type(working_memory_name))
+            if self.memory_manager.has_memory_type(episodic_memory_name):
+                memory_list.extend(self.memory_manager.search(type=episodic_memory_name, query=input_text))
 
             memory_str_list = [memory.content for memory in memory_list]
 

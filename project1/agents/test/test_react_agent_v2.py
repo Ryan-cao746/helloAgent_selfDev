@@ -1,4 +1,4 @@
-from project1.complex_agents.types.react_agent_v2 import ReactAgentV2
+from project1.agents.types.react_agent_v2 import ReactAgentV2
 from dotenv import load_dotenv
 
 from project1.context.react_context_manager import ReActContextManager
@@ -18,10 +18,20 @@ if __name__ == "__main__":
     tool_registry = ToolRegistry()
     example_tool = ExampleTool()
     tool_registry.register_tool(example_tool)
-    memory_manager = MemoryManager(enable_working_memory=True, working_memory=SimpleWorkingMemory())
+    memory_manager = MemoryManager(
+        enable_working_memory=True,
+        working_memory=SimpleWorkingMemory(),
+        working_memory_name=working_memory_name,
+        episodic_memory_name=episodic_memory_name,
+    )
     context_manager = ReActContextManager(tool_registry=tool_registry, memory_manager=memory_manager)
 
-    react_agent = ReactAgentV2(llm_client=llm_client, tool_registry=tool_registry, memory_manager=memory_manager, context_manager=context_manager)
+    react_agent = ReactAgentV2(
+        llm_client=llm_client,
+        tool_registry=tool_registry,
+        memory_manager=memory_manager,
+        context_manager=context_manager,
+    )
 
     result = react_agent.run("帮我查询北京的天气")
 

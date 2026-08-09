@@ -18,14 +18,10 @@ class BaseComplexAgent(ABC):
             self,
             name:str,
             llm_client: HelloAgentsLLM,
-            tool_registry: ToolRegistry = None,
-            system_prompt: Optional[str] = None,
-            config: Optional[Config] = None,
+            tool_registry: ToolRegistry = ToolRegistry(),   # 默认空注册表
     ):
         self.name = name
         self.llm_client = llm_client
-        self.system_prompt = system_prompt
-        self.config = config
         self.tool_registry = tool_registry
     @abstractmethod
     def run(self, input_text: str, **kwargs) -> str:

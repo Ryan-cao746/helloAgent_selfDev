@@ -4,6 +4,7 @@ from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv  # 让你可以把配置项写在 .env 文件里，然后在代码中一键加载，让程序像读取系统环境变量一样去使用它们
 from typing import List, Dict
 
+from project1.core.exceptions import LLMClientError
 from project1.core.message import Message
 
 # llm统一简化接口
@@ -26,7 +27,7 @@ class HelloAgentsLLM:
 
         print(self.model)
         print(self.base_url)
-        print(self.api_key)
+        # print(self.api_key)
 
         if not all([self.model, self.api_key, self.base_url]):
             raise ValueError("模型ID和API密钥和服务地址必须被提供或在.env文件中定义")
@@ -70,8 +71,7 @@ class HelloAgentsLLM:
             return "".join(collected_content)           # 把本次的文本片段放入列表，用于最后组装完整答案。
 
         except Exception as e:
-            print(f"调用LLM API时发生错误：{e}")
-            return None
+            raise LLMClientError("调用LLM API或处理响应时发生错误") from e
 
 # --- 客户端使用示例 --- #
 if __name__ == "__main__":
@@ -89,5 +89,5 @@ if __name__ == "__main__":
             print("\n\n--- 完整响应模型 ---")
             print(responseText)
 
-    except ValueError as e:
+    except (ValueError, LLMClientError) as e:
         print(e)

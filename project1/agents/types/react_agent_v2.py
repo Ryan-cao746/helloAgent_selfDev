@@ -1,9 +1,7 @@
-from project1.complex_agents.types.base import BaseComplexAgent
+from project1.agents.types.base import BaseComplexAgent
 from project1.context.base import ContextManagerBase
-from project1.context.react_context_manager import ReActContextManager
 from project1.core.llm_client import HelloAgentsLLM
 from project1.memory.memory_manager import MemoryManager
-from project1.memory.memory_types.simple_working_memory import SimpleWorkingMemory
 from project1.supportive_functions.output_phrasing import phrase_output, phrase_action
 from project1.tools.registry import ToolRegistry
 from project1.core.message import Message
@@ -15,8 +13,6 @@ class ReactAgentV2(BaseComplexAgent):
             tool_registry:ToolRegistry,
             memory_manager:MemoryManager,
             context_manager:ContextManagerBase,
-            episodic_memory_name: str = "episodic",  # 改为注入名称，防止改名牵一发而动全身，默认为episodic和working
-            working_memory_name: str = "working",
             max_steps: int = 5,
     ):
         super().__init__(
@@ -28,8 +24,8 @@ class ReactAgentV2(BaseComplexAgent):
         self.memory_manager=memory_manager
         self.context_manager = context_manager
         self.max_steps = max_steps
-        self.episodic_memory_name = episodic_memory_name
-        self.working_memory_name = working_memory_name
+        self.episodic_memory_name = memory_manager.episodic_memory_name
+        self.working_memory_name = memory_manager.working_memory_name
 
     def run(self, input_text: str, **kwargs) -> str:
         current_step = 0
@@ -38,7 +34,12 @@ class ReactAgentV2(BaseComplexAgent):
             print(f"-----第{current_step}步-----")
 
             # 提示词构建
-            prompt = self.context_manager.build(input_text=input_text, **kwargs)
+            prompt = self.context_manager.build(
+                input_text=input_text,
+                working_memory_name=self.working_memory_name,
+                episodic_memory_name=self.episodic_memory_name,
+                **kwargs,
+            )
 
             # 调用llm
             response = self.llm_client.think([Message(content=prompt, role="user")], **kwargs)
@@ -54,7 +55,7 @@ class ReactAgentV2(BaseComplexAgent):
                 tool_name, tool_input = phrase_action(action)
                 if self.tool_registry is None:
                     return "似乎不存在工具注册表"
-                result = self.tool_registry.execute_tool_call(tool_name, tool_input)
+                result = self.tool_registry.execute_tool_call_from_text(tool_name, tool_input)
                 self.memory_manager.add(type=self.working_memory_name, content=input_text, role="user")
                 self.memory_manager.add(type=self.working_memory_name, content=result, role="tool")
             else:

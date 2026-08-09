@@ -17,6 +17,12 @@ class Config(BaseModel):
     debug:bool = False
     log_level:str = "INFO"
 
+    # Agent配置
+    max_steps:int = 5
+
+    # 多轮对话配置
+    max_ask:int = 5
+
     # 其他配置
     max_history_length:int = 100
 

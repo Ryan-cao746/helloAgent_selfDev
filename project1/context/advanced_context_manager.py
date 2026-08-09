@@ -16,15 +16,25 @@ class AdvancedContextManager(ContextManagerBase):
     ):
         super().__init__(memory_manager, tool_registry, prompt_template)
 
-    def build(self, input_text:str) -> str:
+    def build(
+            self,
+            input_text:str,
+            **kwargs,
+    ) -> str:
 
         if self.memory_manager:
             selected_memories:List[MemoryItem] = []
-            selected_episodic_memory = self.memory_manager.search(type="episodic", query=input_text) # 查询
-            working_memory = self.memory_manager.get_all_by_type(type="working")
+            working_memory_name = self.memory_manager.working_memory_name
+            episodic_memory_name = self.memory_manager.episodic_memory_name
 
-            selected_memories.extend(selected_episodic_memory)
-            selected_memories.extend(working_memory)
+            if self.memory_manager.has_memory_type(episodic_memory_name):
+                selected_memories.extend(
+                    self.memory_manager.search(type=episodic_memory_name, query=input_text)
+                )
+            if self.memory_manager.has_memory_type(working_memory_name):
+                selected_memories.extend(
+                    self.memory_manager.get_all_by_type(type=working_memory_name)
+                )
             selected_str_list = [memory.content for memory in selected_memories]
             memory_str = "\n".join(selected_str_list)
         else:

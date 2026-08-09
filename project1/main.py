@@ -1,16 +1,30 @@
 # 这是一个示例 Python 脚本。
+from project1.factories.agent_factory import create_multi_turn_conversation
+from project1.tools.built_in.example import ExampleTool
+from project1.user_input_interface.cil_user_input import CilUserInput
+from project1.tools.registry import ToolRegistry
+from project1.config.config import Config
 
 # 按 Shift+F10 执行或将其替换为您的代码。
 # 按 双击 Shift 在所有地方搜索类、文件、工具窗口、操作和设置。
 
+# 目前仅仅做了多轮对话的Agent
+def main():
+    user_input_interface = CilUserInput()
+    tool_registry = ToolRegistry()
+    tool_registry.register_tool(ExampleTool())
 
-def print_hi(name):
-    # 在下面的代码行中使用断点来调试脚本。
-    print(f'Hi, {name}')  # 按 Ctrl+F8 切换断点。
+    multi_asking_agent = create_multi_turn_conversation(
+        user_input_interface=user_input_interface,
+        config=Config(),
+        tool_registry=tool_registry,
+    )
+
+    print(multi_asking_agent.run())
 
 
 # 按装订区域中的绿色按钮以运行脚本。
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    main()
 
 # 访问 https://www.jetbrains.com/help/pycharm/ 获取 PyCharm 帮助

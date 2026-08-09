@@ -37,10 +37,10 @@ SUMMARY_PROMPT_TEMPLATE = """
 
 4. **冲突处理优先原则**：若新信息与旧信息冲突，**以新信息为准**，旧记忆标记为 DELETE 或 UPDATE。
 
-====== 输出格式（必须严格遵守 JSON 数组） ======
+====== 输出格式（必须严格遵守 JSON 对象） ======
 你必须输出一个 **JSON 对象**，包含一个 `operations` 数组。数组中每个元素是一个操作对象，字段如下：
 - `operation`: "ADD" | "UPDATE" | "DELETE" | "NOOP"
-- `summary`: 字符串，精炼描述该条记忆的核心内容（若 NOOP 可写"无变化"）
+- `content`: 字符串，精炼描述该条记忆的核心内容（若 NOOP 可写"无变化"）
 - `target_id`: 字符串，**仅当 UPDATE 或 DELETE 时必填**，需完整复制被操作的情景记忆的id。
 - `reasoning`: 字符串，简要说明推理依据
 
@@ -66,31 +66,31 @@ SUMMARY_PROMPT_TEMPLATE = """
   "operations": [
     {{
       "operation": "UPDATE",
-      "summary": "用户姓名从张三更新为张伟",
+      "content": "用户姓名从张三更新为张伟",
       "target_id": "1",
       "reasoning": "工作记忆明确改名，需修正旧姓名，年龄28岁保持不变（无需重复操作）。"
     }},
     {{
       "operation": "DELETE",
-      "summary": "用户居住地由北京变更为杭州，删除旧地址",
+      "content": "用户居住地由北京变更为杭州，删除旧地址",
       "target_id": "2",
       "reasoning": "新信息直接覆盖旧地址，旧地址失效。"
     }},
     {{
       "operation": "DELETE",
-      "summary": "用户饮食由素食改为非素食，删除旧饮食限制",
+      "content": "用户饮食由素食改为非素食，删除旧饮食限制",
       "target_id": "3",
       "reasoning": "新信息明确否定旧饮食习惯，直接删除。"
     }},
     {{
       "operation": "ADD",
-      "summary": "用户当前位于杭州，寻求杭州火锅店推荐",
+      "content": "用户当前位于杭州，寻求杭州火锅店推荐",
       "target_id": "",
       "reasoning": "工作记忆产生了新的位置关联信息，历史无此记录。"
     }},
     {{
       "operation": "ADD",
-      "summary": "用户虽不再素食但仍有花生过敏史，推荐火锅店需绝对避免花生及花生酱",
+      "content": "用户虽不再素食但仍有花生过敏史，推荐火锅店需绝对避免花生及花生酱",
       "target_id": "",
       "reasoning": "结合历史'对花生过敏'和当前'推荐火锅店'，联合推理衍生出安全警示记忆。"
     }}
@@ -109,5 +109,5 @@ SUMMARY_PROMPT_TEMPLATE = """
 {working_memory}
 </工作记忆>
 
-你的回答（只输出 JSON，不要包含任何其他解释文字）：
+你的回答（只输出由 <ANSWER> 和 </ANSWER> 包裹的 JSON 对象，不要包含其他解释文字）：
 """

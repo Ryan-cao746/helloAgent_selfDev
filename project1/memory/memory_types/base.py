@@ -39,3 +39,7 @@ class BaseMemory(ABC):
 
     def get_all_memories(self) -> Dict[str, MemoryItem]:
         return self.memories
+
+    def replace_all_memories(self, memories: Dict[str, MemoryItem]):
+        """一次性替换内存存储，作为当前内存实现的提交点。"""
+        self.memories = memories

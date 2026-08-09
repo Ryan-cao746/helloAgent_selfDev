@@ -2,7 +2,14 @@
 # 所有工具都使用一致的调用和值返回逻辑
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class ToolCall(BaseModel):
+    """A validated tool invocation shared by agents and the registry."""
+
+    tool_name: str
+    parameters: Dict[str, Any] = Field(default_factory=dict)
 
 # 实现复杂工具参数验证和文档生成
 class ToolParameter(BaseModel):
@@ -16,6 +23,7 @@ class ToolParameter(BaseModel):
     def to_str(self) -> str:
         return f"""
         name: {self.name}
+        type: {self.type}
         description: {self.description}
         required: {self.required}
         default: {self.default}       
@@ -48,7 +56,7 @@ class Tool(ABC):
         return f"""
         ## 工具信息
         name: {self.name}
-        description: {params_description}
+        description: {self.description}
         ## 参数信息
         {params_description}
         """
