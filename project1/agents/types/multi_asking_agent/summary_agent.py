@@ -5,10 +5,10 @@ from project1.context.prompt_templates.summary_prompt_template import SUMMARY_PR
 from project1.core.llm_client import HelloAgentsLLM
 from project1.core.message import Message
 from project1.memory.memory_manager import MemoryManager
-from project1.memory.memory_types.memory_operation import MemoryOperationBatch
+from project1.memory.memory_operation import MemoryOperationBatch
 
 # 为记忆处理专门设计的摘要Agent
-# 因为整体结构偏向简单，所以用这个基类
+# 不会试图让它操作语义记忆
 
 system_prompt = SUMMARY_PROMPT_TEMPLATE
 

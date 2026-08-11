@@ -6,7 +6,7 @@ from uuid import uuid4
 from project1.config.memory_config import MemoryConfig
 from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_types.base import BaseMemory
-from project1.memory.memory_types.memory_operation import MemoryOperationBatch
+from project1.memory.memory_operation import MemoryOperationBatch
 
 
 class MemoryManager:
@@ -18,12 +18,15 @@ class MemoryManager:
             user_id:str = "default_user",
             enable_working_memory:bool = False,
             enable_episodic_memory:bool = False,
+            enable_semantic_memory:bool = False,
             working_memory:BaseMemory = None,
             episodic_memory:BaseMemory = None,
+            sematic_memory:BaseMemory = None,
             working_memory_name:str = "working",
             episodic_memory_name:str = "episodic",
+            semantic_memory_name:str = "semantic",
     ):
-        if not working_memory_name.strip() or not episodic_memory_name.strip():
+        if not working_memory_name.strip() or not episodic_memory_name.strip() or not semantic_memory_name.strip():
             raise ValueError("记忆名称不能为空")
         if working_memory_name == episodic_memory_name:
             raise ValueError("工作记忆和情景记忆不能使用相同名称")
@@ -32,6 +35,7 @@ class MemoryManager:
         self.user_id = user_id
         self.working_memory_name = working_memory_name
         self.episodic_memory_name = episodic_memory_name
+        self.semantic_memory_name = semantic_memory_name
 
         self.memory_types: Dict[str, BaseMemory] = {}
 
@@ -43,6 +47,10 @@ class MemoryManager:
             if episodic_memory is None:
                 raise TypeError("未配置相应的情景记忆类型")
             self.memory_types[self.episodic_memory_name] = episodic_memory
+        if enable_semantic_memory:
+            if sematic_memory is None:
+                raise TypeError("未配置相应的语义记忆类型")
+            self.memory_types[self.semantic_memory_name] = sematic_memory
 
     def add(self, type:str, content:str, role:Literal["user", "assistant", "tool"]):
         """添加记忆的统一方法"""

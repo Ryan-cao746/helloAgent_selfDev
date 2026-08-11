@@ -12,7 +12,7 @@ class MemoryItem(BaseModel):
     """
 
     id: str     # 现在id是必填字段
-    role:Literal["user", "assistant", "tool"] = "user"
+    role:Literal["user", "assistant", "tool", "system"] = "user"
     content: str
     importance: float = 1.0
     created_at: datetime = None
@@ -23,7 +23,7 @@ class MemoryItem(BaseModel):
                  id:str,
                  content:str,
                  importance:float = 1.0,
-                 role:Literal["user", "assistant", "tool"] = "user",
+                 role:Literal["user", "assistant", "tool", "system"] = "user",
                  created_at:datetime = None, # 创建的时间戳
                  expires_at:datetime = None  # 过期的时间戳
                  ):

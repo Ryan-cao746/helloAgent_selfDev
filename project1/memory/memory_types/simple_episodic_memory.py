@@ -3,7 +3,6 @@ from typing import List
 
 from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_types.base import BaseMemory
-from project1.supportive_functions.keyword_search import keyword_search_with_scores_in_memory
 from project1.supportive_functions.tfidf_search import try_tfidf_search_in_memory
 
 

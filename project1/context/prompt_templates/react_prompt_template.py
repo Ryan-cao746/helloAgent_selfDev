@@ -14,5 +14,11 @@ Action:你决定采取的行动，必须是以下格式之一:
 
 现在，请开始解决以下问题：
 Question:{input_text}
+
+搜索得到的语义记忆（高正确性，优先选用）：
+Semantic:{semantic_str}
+
+给出的相关历史记录：
 History:{history_str}
+
 """

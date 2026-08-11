@@ -1,5 +1,5 @@
+# 记忆操作类，处理、校验记忆操作字段
 from typing import Literal, Self
-
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
 

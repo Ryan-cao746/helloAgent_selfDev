@@ -16,10 +16,10 @@ def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
         return []
 
     tokenized_docs = [chinese_tokenize(doc) for doc in memories_str_list]  # 逐个分词
-    print("分词后的文档：")
-    for i, doc in enumerate(tokenized_docs, 1):
-        print(f"  文档{i}: {doc}")
-    print()
+    #print("分词后的文档：")
+    #for i, doc in enumerate(tokenized_docs, 1):
+    #    print(f"  文档{i}: {doc}")
+    #print()
 
     # ============ 3. 加载停用词（可选但推荐） ============
     # 常见中文停用词：的、是、了、在、和...
@@ -44,14 +44,14 @@ def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
 
     # ============ 5. 查看 IDF 值 ============
     feature_names = vectorizer.get_feature_names_out()
-    print("各词的 IDF 值:")
-    for word, idf_val in sorted(
-            zip(feature_names, vectorizer.idf_),
-            key=lambda x: x[1],
-            reverse=True
-    ):
-        print(f"  {word}: {idf_val:.4f}")
-    print()
+    #print("各词的 IDF 值:")
+    #for word, idf_val in sorted(
+    #        zip(feature_names, vectorizer.idf_),
+    #        key=lambda x: x[1],
+    #        reverse=True
+    #):
+    #    print(f"  {word}: {idf_val:.4f}")
+    #print()
 
     results = search(query, vectorizer, tfidf_matrix, top_k=3)
 
@@ -88,7 +88,7 @@ def search(query, vectorizer, tfidf_matrix, top_k=3):
     """
     # 查询分词
     query_tokenized = chinese_tokenize(query)
-    print(f"查询分词结果: {query_tokenized}")
+    #print(f"查询分词结果: {query_tokenized}")
 
     # 查询向量化（必须用 transform，不能 fit_transform！）
     query_vector = vectorizer.transform([query_tokenized])
