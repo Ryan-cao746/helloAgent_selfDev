@@ -9,7 +9,232 @@ An application sourced from the code of HelloAgent, used for learning.
 - 添加了语义记忆的功能。改根目录下的memory_lib中的文档即可。
 - 目前md文档按段落拆分，所以可以把小标题和段落内容合在一段里写
 - 计划添加更多工具，包括浏览器操作。
-- 这需要建一个内部的mvc了
+- 再次大改
+本轮将原本依赖 `Thought/Action` 文本正则解析的 ReAct 循环，改造成了结构化决策循环。
+
+**主要改动**
+
+- 新增 [agent_protocol.py]
+  - `ToolDecision`：请求调用工具
+  - `FinishDecision`：返回最终答案
+  - `AgentStepRecord`：记录每一步决策和工具结果
+  - `AgentRunResult`：记录运行状态、输出、错误和完整步骤
+  - `AgentDecision` 使用普通联合类型，消除了 PyCharm 对 `kind` 的误报
+
+- 改造 [llm_client.py]
+  - 新增 `decide()` 方法
+  - 使用 Pydantic 校验模型返回的 JSON
+  - 首次格式错误时反馈校验信息并允许模型修复一次
+  - 再次失败时抛出明确的 `LLMClientError`
+
+- 重写 [react_agent_v2.py]
+  - 新增 `run_structured()` 结构化执行入口
+  - 支持“模型决策 → 工具执行 → 结果回传 → 下一次决策”
+  - `run()` 仍返回字符串，保持现有多轮会话兼容
+  - 可通过 `last_run_result` 查看完整运行轨迹
+  - 区分 `finished` 和 `failed`
+  - 达到最大步骤、缺少注册表、模型协议错误均会产生结构化失败结果
+  - 用户输入和最终回答只在结束时写入一次，修复工具循环中的重复记忆
+  - 工具执行结果只保留在本次步骤轨迹中，不再污染长期记忆
+
+- 更新 [react_prompt_template.py]
+  - 模型只能返回 `tool` 或 `finish` JSON
+  - 禁止 Markdown 和额外文本
+  - 不再要求输出完整 `Thought`
+
+- 更新 [react_context_manager.py]
+  - 补充空的 `semantic_str`，避免基础 Context 使用新模板时缺少占位参数
+
+- 加强 [base.py]
+  - `ToolCall` 禁止未知字段，工具请求协议更严格
+
+- 新增 [test_structured_react_agent.py]
+  - 覆盖直接完成
+  - 工具调用后完成
+  - 达到最大步骤
+  - 未知协议字段
+  - 非法 JSON 自动修复
+
+**验证情况**
+
+`AgentDecision` 的 `tool` 和 `finish` JSON 分流已通过实际 Pydantic 解析验证。现有测试中有 15 项通过；完整新测试尚未跑通，因为 Codex 自带 Python 缺少 `openai`，而调用项目 Python 的权限请求被中止。
+
+工作区里的 `.env`、`.idea`、`__pycache__` 等原有未跟踪文件没有被本轮修改。
+
+#### 学到了什么：
+这轮修改最核心的学习点是：**LLM 应该是“不可靠的决策建议者”，而程序才是“可靠的流程控制者”。**
+
+你原来的结构是：
+
+```text
+模型生成任意文本
+→ 正则表达式猜测 Thought 和 Action
+→ 从字符串中继续猜工具名称和参数
+→ 执行工具
+```
+
+现在变成：
+
+```text
+模型生成决策 JSON
+→ Pydantic 校验
+→ 程序识别 ToolDecision 或 FinishDecision
+→ 执行工具或结束
+```
+
+**1. 从字符串约定升级为数据协议**
+
+原来：
+
+```python
+thought, action = phrase_output(response)
+
+if action.startswith("Finish"):
+    ...
+```
+
+这里的 `Action` 只是字符串，拼写、标点或括号变化都可能导致程序失效。
+
+现在：
+
+```python
+decision = self.llm_client.decide(messages)
+
+if isinstance(decision, ToolDecision):
+    ...
+elif isinstance(decision, FinishDecision):
+    ...
+```
+
+这就是“协议思维”：模块之间传递有明确字段、类型和约束的数据，而不是依赖双方默契理解一段文本。
+
+**2. LLM 输出应当视为外部不可信输入**
+
+模型即使很强，也可能返回：
+
+- 不合法 JSON
+- 不存在的工具
+- 缺少参数
+- 多余字段
+- 空答案
+
+因此它和 HTTP 请求、用户输入一样，都必须先校验：
+
+```python
+parse_agent_decision(response)
+```
+
+只有通过校验的数据才能进入工具执行层。
+
+**3. Prompt 不能代替程序校验**
+
+原来的提示词虽然要求模型遵守 `Thought/Action` 格式，但“要求”不等于“保证”。
+
+现在形成了两层约束：
+
+```text
+Prompt：告诉模型应该怎样输出
+Pydantic：决定程序实际接受什么
+```
+
+Prompt 用于提高成功率，Schema 才是真正的安全边界。
+
+**4. Agent 循环本质上是状态转换**
+
+原来的 `while` 循环虽然也在运行，但状态是隐含在字符串和 `if` 中的。
+
+现在每一步都有明确含义：
+
+```text
+ToolDecision
+→ 执行工具
+→ 记录 ToolResult
+→ 将观察结果交给模型
+→ FinishDecision
+```
+
+`AgentStepRecord` 使过程成为可检查的数据，而不是执行完就消失的临时变量。
+
+严格来说，目前还是“结构化状态循环”，还不是完整状态机。以后可以继续增加：
+
+```text
+running / retrying / cancelled / timed_out
+```
+
+**5. 执行轨迹和记忆是不同的数据**
+
+原来的工具结果直接进入工作记忆，而且每次工具调用都重复保存用户输入。这混淆了两件事：
+
+- 这次任务是怎么执行的
+- 用户有哪些值得记住的信息
+
+现在：
+
+- 工具调用和结果进入 `AgentStepRecord`
+- 用户输入和最终回答在结束时写入一次
+- 长期记忆不再保存大量执行噪声
+
+这是 Agent 系统中很重要的边界：
+
+```text
+运行轨迹用于调试和审计
+对话记录用于保持上下文
+长期记忆用于跨会话召回
+```
+
+**6. 错误也应该是结构化结果**
+
+原来达到最大步数时，只返回一句普通文本：
+
+```python
+"已达到最大迭代次数，无法完成任务。"
+```
+
+调用者无法判断这是正常回答还是失败提示。
+
+现在可以检查：
+
+```python
+result.status
+result.error
+result.step_count
+result.steps
+```
+
+展示给用户的是 `output`，程序判断运行情况则使用 `status` 和 `error`。
+
+**7. 可以在不破坏旧接口的情况下演进架构**
+
+新增了：
+
+```python
+run_structured() -> AgentRunResult
+```
+
+但保留：
+
+```python
+run() -> str
+```
+
+所以现有 `MultiTurnConversation` 不需要同步大改。这体现了兼容层的价值：内部逐步升级，对外接口暂时稳定。
+
+**8. 依赖注入让 Agent 更容易测试**
+
+因为 LLM、Context、Memory 和 ToolRegistry 都由外部传入，测试可以使用 Fake LLM：
+
+```python
+FakeDecisionLLM([
+    ToolDecision(...),
+    FinishDecision(...),
+])
+```
+
+不用调用真实模型，就能稳定验证工具循环、最大步数和记忆写入。这比测试模型“会不会恰好输出指定格式”可靠得多。
+
+目前的新结构仍有提升空间：工具失败还是字符串、运行轨迹尚未持久化、没有取消和超时、工具观察暂时用普通消息传递。但它已经建立了正确的主干。
+
+一句话概括这轮架构变化：**模型负责提出下一步，程序负责验证、执行和决定状态如何转换。**
 
 ### 2026-08-09
 - 借AI大改，具体如下

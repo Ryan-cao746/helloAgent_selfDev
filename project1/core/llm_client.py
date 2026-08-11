@@ -1,9 +1,11 @@
 import os
 
 from openai import OpenAI
-from dotenv import load_dotenv, find_dotenv  # 让你可以把配置项写在 .env 文件里，然后在代码中一键加载，让程序像读取系统环境变量一样去使用它们
-from typing import List, Dict
+from dotenv import load_dotenv  # 让你可以把配置项写在 .env 文件里，然后在代码中一键加载，让程序像读取系统环境变量一样去使用它们
+from pydantic import ValidationError
+from typing import List
 
+from project1.core.agent_protocol import AgentDecision, parse_agent_decision
 from project1.core.exceptions import LLMClientError
 from project1.core.message import Message
 
@@ -72,6 +74,42 @@ class HelloAgentsLLM:
 
         except Exception as e:
             raise LLMClientError("调用LLM API或处理响应时发生错误") from e
+
+    def decide(
+            self,
+            messages: List[Message],
+            temperature: float = 0,
+            max_retries: int = 1,
+    ) -> AgentDecision:
+        """Request and validate one structured agent decision.
+            请求并校验，获取结构化的Agent响应
+        """
+        if max_retries < 0:
+            raise ValueError("max_retries 不能小于 0")
+
+        decision_messages = list(messages)
+
+        for attempt in range(max_retries + 1):
+            response = self.think(decision_messages, temperature=temperature)
+            try:
+                return parse_agent_decision(response)
+            except ValidationError as error:
+                if attempt >= max_retries:
+                    raise LLMClientError("模型未返回合法的 Agent 决策 JSON") from error
+
+                decision_messages.extend([
+                    Message(content=response, role="assistant"),
+                    Message(
+                        content=(
+                            "上一次响应不符合 Agent 决策协议。"
+                            f"校验错误：{error}\n"
+                            "请只返回一个合法 JSON 对象，不要输出 Markdown 或其他文字。"
+                        ),
+                        role="user",
+                    ),
+                ])  # 错误捕获，并处理异常，避免程序终止
+
+        raise LLMClientError("无法获得 Agent 决策")
 
 # --- 客户端使用示例 --- #
 if __name__ == "__main__":

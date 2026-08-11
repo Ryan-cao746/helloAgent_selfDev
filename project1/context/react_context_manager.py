@@ -45,5 +45,10 @@ class ReActContextManager(ContextManagerBase):
         else:
             memory_str = "None"
 
-        return  self.prompt_template.format(tool_description=tool_description, history_str=memory_str, input_text=input_text)
+        return self.prompt_template.format(
+            tool_description=tool_description,
+            history_str=memory_str,
+            input_text=input_text,
+            semantic_str="",
+        )
 

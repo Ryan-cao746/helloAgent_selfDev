@@ -2,11 +2,13 @@
 # 所有工具都使用一致的调用和值返回逻辑
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ToolCall(BaseModel):
     """A validated tool invocation shared by agents and the registry."""
+
+    model_config = ConfigDict(extra="forbid")
 
     tool_name: str
     parameters: Dict[str, Any] = Field(default_factory=dict)

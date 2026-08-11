@@ -1,24 +1,36 @@
 REACT_PROMPT_TEMPLATE = """
-注意，你是一个有能力调用外部工具的智能助手
+你是一个能够调用外部工具的智能助手。
 
-可用工具如下：
+可用工具：
 {tool_description}
 
-请严格按照以下格式进行回应
+你每次只能返回一个合法 JSON 对象，不要使用 Markdown 代码块，不要输出 JSON 之外的文字。
 
-Thought:你的思考过程，用于分析问题、拆解任务和规划下一步行动
-Action:你决定采取的行动，必须是以下格式之一:
-- '{{tool_name}}[{{"parameter_name": "value"}}]':调用一个可用工具，参数必须是 JSON 对象。示例如:'example_tool[{{"city": "北京"}}]'
-- 'Finish[最终答案]':当你认为已经获得最终答案时。
-- 当你收集到足够的信息，能够回答用户的最终问题时，你必须在Action:字段后使用 Finish[最终答案] 来输出最终答案。
+需要调用工具时返回：
+{{
+  "kind": "tool",
+  "reasoning_summary": "简短说明为什么需要该工具",
+  "tool_call": {{
+    "tool_name": "工具名称",
+    "parameters": {{"参数名称": "参数值"}}
+  }}
+}}
 
-现在，请开始解决以下问题：
-Question:{input_text}
+已经能够回答问题时返回：
+{{
+  "kind": "finish",
+  "reasoning_summary": "简短说明为什么可以结束",
+  "final_answer": "给用户的最终答案"
+}}
+
+不要输出完整思考过程。工具执行结果会在后续消息中提供；获得结果后继续返回下一项决策。
+
+用户问题：
+{input_text}
 
 搜索得到的语义记忆（高正确性，优先选用）：
-Semantic:{semantic_str}
+{semantic_str}
 
-给出的相关历史记录：
-History:{history_str}
-
+相关历史记录：
+{history_str}
 """
