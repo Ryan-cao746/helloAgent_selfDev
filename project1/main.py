@@ -1,6 +1,7 @@
 # 这是一个示例 Python 脚本。
 from project1.factories.agent_factory import create_multi_turn_conversation
 from project1.tools.built_in.example import ExampleTool
+from project1.tools.doubao_search import DouBaoSearchTool
 from project1.user_input_interface.cil_user_input import CilUserInput
 from project1.tools.registry import ToolRegistry
 from project1.config.config import Config
@@ -13,6 +14,7 @@ def main():
     user_input_interface = CilUserInput()
     tool_registry = ToolRegistry()
     tool_registry.register_tool(ExampleTool())
+    tool_registry.register_tool(DouBaoSearchTool())
 
     multi_asking_agent = create_multi_turn_conversation(
         user_input_interface=user_input_interface,

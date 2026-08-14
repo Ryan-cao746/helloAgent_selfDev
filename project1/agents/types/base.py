@@ -18,11 +18,11 @@ class BaseComplexAgent(ABC):
             self,
             name:str,
             llm_client: HelloAgentsLLM,
-            tool_registry: ToolRegistry = ToolRegistry(),   # 默认空注册表
+            tool_registry: Optional[ToolRegistry] = None,   # 默认空注册表
     ):
         self.name = name
         self.llm_client = llm_client
-        self.tool_registry = tool_registry
+        self.tool_registry = tool_registry if tool_registry is not None else ToolRegistry()
     @abstractmethod
     def run(self, input_text: str, **kwargs) -> str:
         """运行Agent"""

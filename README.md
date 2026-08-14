@@ -5,6 +5,26 @@ An application sourced from the code of HelloAgent, used for learning.
 
 以下记录按时间降序排列，最新改动优先展示，并保留各阶段当时的设计与实现状态。
 
+### 至2026-08-14
+- 完成了豆包搜索工具。
+- 对原搜索函数做出如下更改：
+新增 SearchFilter 模型，正确支持 NeedContent、NeedUrl、Sites、BlockHosts、AuthInfoLevel。
+新增 QueryControl 模型，支持 QueryRewrite。
+补齐 SearchRequestParams 中的 QueryControl、ContentFormats、Industry。
+支持 snake_case 参数自动转换为豆包 API 所需的 PascalCase 字段。
+增加参数约束，例如结果数 1~50、时间范围格式、行业和正文格式枚举。
+修正 Filter 原先错误的 Dict[str, bool] 类型，否则 sites 等字符串字段无法通过校验。
+修正 RuyiInfo 类型，由字符串改为对象。
+允许错误响应中的 Result 为 None。
+为 FinalSearchResult 增加 error 字段，保留具体失败原因。
+请求增加默认 30 秒超时和 HTTP 状态检查。
+识别 API 返回的业务错误，而不再把错误响应当成成功结果。
+删除包含硬编码 API Key 的调试入口，避免密钥继续保存在源码中。
+
+### 至2026-08-13
+- 修正了部分错误。修正了memory_types\base的死代码。优化了异常控制和异常保护，完善了异常降级机制，单轮失败不终止对话。修复了其他一些潜在的bug
+- 做好了网页搜索的api，初步测试正常。目前调用豆包搜索的API联网搜索信息。相关信息需要在config里定义字段。
+
 ### 至2026-08-11
 - 添加了语义记忆的功能。改根目录下的memory_lib中的文档即可。
 - 目前md文档按段落拆分，所以可以把小标题和段落内容合在一段里写

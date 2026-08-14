@@ -27,21 +27,23 @@ class HelloAgentsLLM:
         self.timeout = timeout or os.getenv("LLM_TIMEOUT", 60)
         self.debug_mode = debug_mode
 
-        print(self.model)
-        print(self.base_url)
-        # print(self.api_key)
+        if self.debug_mode:
+            print(self.model)
+            print(self.base_url)
+            # print(self.api_key)
 
         if not all([self.model, self.api_key, self.base_url]):
             raise ValueError("模型ID和API密钥和服务地址必须被提供或在.env文件中定义")
 
         # 它负责管理与 OpenAI API 的认证、网络请求等。
-        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=timeout)
+        self.client = OpenAI(api_key=self.api_key, base_url=self.base_url, timeout=self.timeout)
 
     def think(self, messages:List[Message], temperature: float = 0)->str :
         """
         调用大语言模型进行思考，并返回其响应
         """
-        print(f"正在调用{self.model}模型")
+        if self.debug_mode:
+            print(f"正在调用{self.model}模型")
         try:
             response = self.client.chat.completions.create(
                 model = self.model,
@@ -61,7 +63,8 @@ class HelloAgentsLLM:
             # create(...)：实际发出请求的方法，它会向 OpenAI 的 /v1/chat/completions 端点发送 HTTP 请求，并返回一个响应对象。
 
             # 处理流式响应
-            print("大语言模型响应成功")
+            if self.debug_mode:
+                print("大语言模型响应成功")
             collected_content = []
             for chunk in response:        # 每个 chunk 是 API 返回的一个 JSON 解析后的对象，通常带有 choices 字段。
                 if not chunk.choices:     # 某些分块可能只包含元数据（如 role 定义、finish_reason 等），没有实际的文本内容（choices 为空）。跳过这些无效块，避免后续取 choices[0] 时出错。

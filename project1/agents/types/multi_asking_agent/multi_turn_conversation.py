@@ -44,11 +44,20 @@ class MultiTurnConversation:
 
             input_text = user_input.input_text
 
-            answer = self.conversation_agent.run(input_text=input_text)
+            try:
+                answer = self.conversation_agent.run(input_text=input_text)
+            except Exception as e:
+                # 单轮对话失败不应终止整场会话，记录后跳过该轮
+                print(f"本轮对话Agent执行失败: {e}")
+                continue
 
             print(f"answer: {answer}")
 
-            self.summary_agent.run(input_text="default")    # 整理记忆系统
+            try:
+                self.summary_agent.run(input_text="default")    # 整理记忆系统
+            except Exception as e:
+                # 单次摘要失败同样降级，不中断后续对话
+                print(f"本轮记忆整理失败: {e}")
 
             if self.debug_mode:
                 print("====== 调试信息 ======")

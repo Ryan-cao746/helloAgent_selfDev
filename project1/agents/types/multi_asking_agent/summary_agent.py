@@ -41,41 +41,46 @@ class SummaryAgent(BaseComplexAgent):
 
         prompt = system_prompt.format(retrieved_memories=selected_episodic_memory_str, working_memory=working_memory_str)
 
-        response = self.llm_client.think([Message(content=prompt, role="user")])
-        if self.debug_mode:
-            print(response)
+        try:
+            response = self.llm_client.think([Message(content=prompt, role="user")])
+            if self.debug_mode:
+                print(response)
 
-        data = extract_json_from_answer(response)
+            data = extract_json_from_answer(response)
 
-        # 先用operation_batch接受、构造、校验获取的json数组内容
-        operation_batch = MemoryOperationBatch.model_validate(data) # 直接传入字典，自动解包，从任意对象提取数据，并启动整个校验引擎
-        if not operation_batch.operations:
-            print("没有找到 operations 数组")
-            return  "没有找到 operations 数组"
+            # 先用operation_batch接受、构造、校验获取的json数组内容
+            operation_batch = MemoryOperationBatch.model_validate(data) # 直接传入字典，自动解包，从任意对象提取数据，并启动整个校验引擎
+            if not operation_batch.operations:
+                print("没有找到 operations 数组")
+                return  "没有找到 operations 数组"
 
-        if self.debug_mode:
-            print("====== 解析结果 ======")
-            for operation in operation_batch.operations:
-                print(
-                    f"op_type={operation.operation},\n"
-                    f"id={operation.target_id},\n"
-                    f"content={operation.content}\n"
-                )
+            if self.debug_mode:
+                print("====== 解析结果 ======")
+                for operation in operation_batch.operations:
+                    print(
+                        f"op_type={operation.operation},\n"
+                        f"id={operation.target_id},\n"
+                        f"content={operation.content}\n"
+                    )
 
-        # memory_manager使用校验好的数据
-        self.memory_manager.apply_operation_batch(
-            type=self.memory_manager.episodic_memory_name,
-            batch=operation_batch,
-            add_role="user",
-        )
+            # memory_manager使用校验好的数据
+            self.memory_manager.apply_operation_batch(
+                type=self.memory_manager.episodic_memory_name,
+                batch=operation_batch,
+                add_role="user",
+            )
 
-        if self.debug_mode:
-            print("====== 更改前情景记忆 ======")
-            print(selected_episodic_memory_str)
-            episodic_memories = self.memory_manager.get_all_by_type(type=self.memory_manager.episodic_memory_name)
-            episodic_str_list = [memory.content for memory in episodic_memories]
-            print("====== 更改后情景记忆 ======")
-            print("\n".join(episodic_str_list))
+            if self.debug_mode:
+                print("====== 更改前情景记忆 ======")
+                print(selected_episodic_memory_str)
+                episodic_memories = self.memory_manager.get_all_by_type(type=self.memory_manager.episodic_memory_name)
+                episodic_str_list = [memory.content for memory in episodic_memories]
+                print("====== 更改后情景记忆 ======")
+                print("\n".join(episodic_str_list))
+        except Exception as e:
+            # 单次摘要失败不应终止整场会话，记录后降级为失败结果
+            print(f"摘要Agent处理失败: {e}")
+            return f"摘要处理失败: {e}"
 
         return "操作完成"
 

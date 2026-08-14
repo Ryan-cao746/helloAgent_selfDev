@@ -24,11 +24,17 @@ class BaseMemory(ABC):
     def _expire_old_memories(self):
         """清除过期的记忆"""
         # 如果当前时间大于应该予以清除的时间，则删除该记录
-        for key, value in self.memories.items():
-            if value.expires_at < datetime.now():
+        now = datetime.now()
+        # 遍历副本以避免在遍历时修改字典（RuntimeError）
+        for key, value in list(self.memories.items()):
+            if value.expires_at is not None and value.expires_at < now:
                 del self.memories[key]
+
     def _remove_low_priority_memories(self):
         """按重要性排序再删除不重要的记忆"""
+        if self.memory_config is None or self.memory_config.working_memory_capacity <= 0:
+            # 未配置或容量为 0 表示不限制，不清理
+            return
         memory_list:List[MemoryItem] = []
         for key, value in self.memories.items():
             memory_list.append(value)
