@@ -1,4 +1,5 @@
-# 记忆操作类，处理、校验记忆操作字段
+"""定义摘要 Agent 生成的记忆操作及批次级冲突校验。"""
+
 from typing import Literal, Self
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -6,29 +7,29 @@ from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 class MemoryOperation(BaseModel):
     """一条经过运行时校验的记忆变更指令。"""
 
-    model_config = ConfigDict(extra="forbid")   # 禁止数据类接受未定义的字段
+    model_config = ConfigDict(extra="forbid")
 
     operation: Literal["ADD", "UPDATE", "DELETE", "NOOP"]
     target_id: str | None = None
     content: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("content", "summary"),    # 于处理数据来源多样、字段命名不统一的场景，让数据模型更加灵活和健壮
+        # ``summary`` 是旧版摘要协议使用的兼容字段名。
+        validation_alias=AliasChoices("content", "summary"),
     )
     reasoning: str | None = None
 
-    #为单个字段添加校验逻辑。
-    @field_validator("target_id", "content", mode="before") # 转换前。在 Pydantic 做任何内置转换和校验之前。格式处理、数据清洗
+    @field_validator("target_id", "content", mode="before")
     @classmethod
     def normalize_empty_string(cls, value):
+        """将空白字符串规范化为 ``None``，便于后续必填校验。"""
         if isinstance(value, str):
             value = value.strip()
             return value or None
         return value
 
-    # 用于需要多个字段联动校验的场景
-    @model_validator(mode="after")  #在 Pydantic 完成了内置类型转换和基本约束校验（如 Field(gt=0)）之后执行。
+    @model_validator(mode="after")
     def validate_required_fields(self) -> Self:
-        """校验相关字段"""
+        """根据操作类型校验正文和目标 ID 是否齐全。"""
         if self.operation in {"ADD", "UPDATE"} and self.content is None:
             raise ValueError(f"{self.operation} 操作必须提供 content")
         if self.operation in {"UPDATE", "DELETE"} and self.target_id is None:
@@ -39,14 +40,13 @@ class MemoryOperation(BaseModel):
 class MemoryOperationBatch(BaseModel):
     """一次摘要产生的完整变更计划，也是原子提交单位。"""
 
-    model_config = ConfigDict(extra="forbid")   # 禁止数据类接受未定义的字段
+    model_config = ConfigDict(extra="forbid")
 
     operations: list[MemoryOperation] = Field(default_factory=list, max_length=100)
 
-    # 自定义特定阶段的校验逻辑
-    @model_validator(mode="after")  # 在 Pydantic 完成了内置类型转换和基本约束校验后处理
+    @model_validator(mode="after")
     def reject_conflicting_operations(self) -> Self:
-        """校验，排除存在冲突指令的情况"""
+        """拒绝同批次重复修改同一条目或重复添加相同内容。"""
         targeted_ids: set[str] = set()
         added_contents: set[str] = set()
 

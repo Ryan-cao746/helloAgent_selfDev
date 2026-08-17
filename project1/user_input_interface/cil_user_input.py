@@ -1,9 +1,14 @@
+"""实现命令行用户输入和高风险工具确认。"""
 
 from project1.user_input_interface.base import UserInputInterface, InputParams
+from project1.tools.base import ToolCall, ToolPolicy
 
 
 class CilUserInput(UserInputInterface):
+    """通过标准输入输出驱动多轮对话。"""
+
     def get_input(self) -> InputParams:
+        """读取消息类型，并在对话类型下继续读取提示文本。"""
 
         prompt1 = """
         ---- 请输入消息类型 ----
@@ -32,3 +37,15 @@ class CilUserInput(UserInputInterface):
                 input_text="N/A",
                 input_type="Error"
             )
+
+    def confirm_tool_call(
+            self,
+            tool_call: ToolCall,
+            policy: ToolPolicy,
+    ) -> bool:
+        """展示工具权限和名称，仅接受明确的 y/yes 确认。"""
+        print(
+            f"工具 {tool_call.tool_name} 请求 {policy.access} 权限，是否允许执行？"
+        )
+        answer = input("输入 y 确认，其他内容拒绝：").strip().lower()
+        return answer in {"y", "yes"}

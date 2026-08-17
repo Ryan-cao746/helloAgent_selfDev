@@ -1,12 +1,11 @@
+"""解析摘要模型使用 ``<ANSWER>`` 标签包裹的 JSON 结果。"""
+
 import json
 import re
 
 
 def extract_json_from_answer(text: str) -> dict:
-    """
-    从带有 <ANSWER> 标签的文本中提取 JSON 对象。
-    假设 JSON 位于 <ANSWER> 和 </ANSWER> 之间。
-    """
+    """提取 ``<ANSWER>`` 标签内的内容并解析为 JSON 对象。"""
     pattern = r'<ANSWER>\s*(.*?)\s*</ANSWER>'
     match = re.search(pattern, text, re.DOTALL)
     if not match:
@@ -20,7 +19,7 @@ def extract_json_from_answer(text: str) -> dict:
 
 
 def pretty_print_operations(data: dict):
-    """打印 operations 数组中的每条操作（适配新格式）"""
+    """以便于人工调试的格式打印每条记忆操作。"""
     ops = data.get("operations", [])
     if not ops:
         print("没有找到 operations 数组")
@@ -37,7 +36,7 @@ def pretty_print_operations(data: dict):
 
 
 def main():
-    # 示例输入（使用新格式）
+    """使用内置示例演示摘要结果解析。"""
     sample_text = """
 你的回答（必须是一个合法的 JSON）：
 <ANSWER>

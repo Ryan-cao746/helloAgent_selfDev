@@ -1,3 +1,5 @@
+"""验证多轮会话装配与运行的冒烟脚本。"""
+
 from project1.config.config import Config
 from project1.factories.agent_factory import create_multi_turn_conversation
 from project1.tools.built_in.example import ExampleTool

@@ -1,4 +1,5 @@
-# 简单的情景记忆，用Python数组存储，现在不做持久化
+"""提供基于内存字典和 TF-IDF 检索的情景记忆。"""
+
 from typing import List
 
 from project1.memory.memory_item import MemoryItem
@@ -7,14 +8,17 @@ from project1.supportive_functions.tfidf_search import try_tfidf_search_in_memor
 
 
 class SimpleEpisodicMemory(BaseMemory):
+    """保存历史对话事实，不进行数据库持久化。"""
+
     def __init__(self):
         super().__init__()  # 调用父类的初始化方法，直接初始化memories列表
 
     def add(self, memory_item:MemoryItem):
+        """按 ID 保存或覆盖一条情景记忆。"""
         self.memories[memory_item.id] = memory_item
 
     def retrieve(self, query: str, limit: int = 5, **kwargs) -> List[MemoryItem]:
-        """TF-IDF向量化检索"""
+        """返回与查询文本 TF-IDF 相似度最高的情景记忆。"""
 
         # TF-IDF向量化检索，返回每一项对应的评分
         vector_scores = try_tfidf_search_in_memory(query=query, memories=self.memories)  # 专门定制的根据记忆列表查询

@@ -1,3 +1,5 @@
+"""定义需要模型客户端、工具和上下文依赖的复合 Agent 抽象接口。"""
+
 from abc import ABC, abstractmethod
 
 from project1.context.base import ContextManagerBase
@@ -9,8 +11,9 @@ from project1.tools.registry import ToolRegistry
 
 
 class BaseComplexAgent(ABC):
+    """复合 Agent 基类，统一保存名称、模型客户端和工具注册表。"""
 
-    # 接口写在这里了，必须赋值
+    # 具体 Agent 在初始化时必须提供这两个运行依赖。
     memory_manager: MemoryManager
     context_manager: ContextManagerBase
 
@@ -18,12 +21,12 @@ class BaseComplexAgent(ABC):
             self,
             name:str,
             llm_client: HelloAgentsLLM,
-            tool_registry: Optional[ToolRegistry] = None,   # 默认空注册表
+            tool_registry: Optional[ToolRegistry] = None,
     ):
         self.name = name
         self.llm_client = llm_client
         self.tool_registry = tool_registry if tool_registry is not None else ToolRegistry()
     @abstractmethod
     def run(self, input_text: str, **kwargs) -> str:
-        """运行Agent"""
+        """处理一次用户输入并返回面向调用方的文本结果。"""
         pass

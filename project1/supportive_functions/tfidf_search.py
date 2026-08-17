@@ -1,5 +1,8 @@
-# TF-IDF向量化检索
-# 我让这些函数返回的是所有项的相似度评分，没有排序等东西，因为要计算综合评分，所以不能忽略某一项
+"""基于 TF-IDF 向量和余弦相似度的中文检索。
+
+这些函数返回所有项与查询的相似度评分，不排序、不截断，方便调用方
+结合其他因素（如重要性权重）计算综合评分。
+"""
 from typing import List, Dict
 
 import jieba
@@ -10,8 +13,7 @@ import numpy as np
 from project1.memory.memory_item import MemoryItem
 
 def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
-    #memories_str_list = [memory.content for memory in memories] # 获取str形式的列表
-
+    """返回每条文本与查询的 TF-IDF 余弦相似度评分列表。"""
     if memories_str_list.__len__() == 0:
         return []
 
@@ -59,7 +61,7 @@ def try_tfidf_search(query:str, memories_str_list:List[str]) -> List[float]:
 
 # Memory类型形式的查询
 def try_tfidf_search_in_memory(query:str, memories:Dict[str, MemoryItem]) -> Dict[str, float]:
-
+    """返回以记忆 ID 为键、查询相似度为值的评分字典。"""
     memory_list:List[MemoryItem] = list(memories.values())
 
     memories_str_list = [memory.content for memory in memory_list] # 获取str形式的列表

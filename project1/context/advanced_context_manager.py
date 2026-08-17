@@ -1,3 +1,5 @@
+"""构建同时包含工作、情景和语义记忆的 Agent 上下文。"""
+
 from typing import List
 
 from project1.context.base import ContextManagerBase
@@ -6,8 +8,8 @@ from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_manager import MemoryManager
 from project1.tools.registry import ToolRegistry
 
-# 为装配了情景记忆系统的Agent设计的上下文构建器
 class AdvancedContextManager(ContextManagerBase):
+    """为启用三类记忆的 Agent 选择相关内容并填充提示词模板。"""
     def __init__(
             self,
             memory_manager: MemoryManager,
@@ -21,6 +23,7 @@ class AdvancedContextManager(ContextManagerBase):
             input_text:str,
             **kwargs,
     ) -> str:
+        """检索与输入相关的记忆，并生成本轮完整模型上下文。"""
 
         if self.memory_manager:
             selected_memories:List[MemoryItem] = []
@@ -53,7 +56,7 @@ class AdvancedContextManager(ContextManagerBase):
             semantic_str = ""
 
         if self.tool_registry:
-            tool_description = self.tool_registry.get_tools_description()  # 获取关于所有工具的详细描述
+            tool_description = self.tool_registry.get_tools_description()
         else:
             tool_description = "None"
 

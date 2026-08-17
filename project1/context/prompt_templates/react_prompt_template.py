@@ -1,3 +1,5 @@
+"""Agent 结构化决策循环使用的 ReAct 提示词模板。"""
+
 REACT_PROMPT_TEMPLATE = """
 你是一个能够调用外部工具的智能助手。
 

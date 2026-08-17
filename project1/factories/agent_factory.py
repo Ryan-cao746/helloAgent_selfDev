@@ -1,3 +1,5 @@
+"""提供项目默认 Agent 及其依赖组件的装配函数。"""
+
 from project1.agents.types.multi_asking_agent.multi_turn_conversation import MultiTurnConversation
 from project1.agents.types.multi_asking_agent.summary_agent import SummaryAgent
 from project1.agents.types.react_agent_v2 import ReactAgentV2
@@ -15,9 +17,9 @@ from project1.tools.registry import ToolRegistry
 def create_multi_turn_conversation(
     config: Config,
     user_input_interface: UserInputInterface,
-    tool_registry: ToolRegistry,    # 工具类还是要外面提供的
+    tool_registry: ToolRegistry,
 ) -> MultiTurnConversation:
-    """专门构建多轮对话模型的工厂函数"""
+    """创建共享模型客户端、记忆组件和工具注册表的多轮会话。"""
 
     llm = HelloAgentsLLM()
 
@@ -43,6 +45,11 @@ def create_multi_turn_conversation(
         memory_manager=memory_manager,
         context_manager=context_manager,
         max_steps=config.max_steps,
+        max_tool_calls=config.max_tool_calls,
+        max_repeated_tool_calls=config.max_repeated_tool_calls,
+        max_total_tool_output_chars=config.max_total_tool_output_chars,
+        run_timeout_seconds=config.run_timeout_seconds,
+        confirmation_handler=user_input_interface.confirm_tool_call,
     )
 
     summary_agent = SummaryAgent(

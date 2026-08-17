@@ -1,3 +1,5 @@
+"""构建由工具说明、近期记忆和用户输入组成的基础 ReAct 上下文。"""
+
 from typing import List
 
 from project1.context.base import ContextManagerBase
@@ -6,8 +8,8 @@ from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_manager import MemoryManager
 from project1.tools.registry import ToolRegistry
 
-# 一个基本上下文构建方法，即模板+历史记录直接赛在一起
 class ReActContextManager(ContextManagerBase):
+    """将工作记忆和检索到的情景记忆填入 ReAct 提示词模板。"""
     def __init__(
             self,
             memory_manager:MemoryManager = None,
@@ -23,9 +25,10 @@ class ReActContextManager(ContextManagerBase):
             episodic_memory_name:str = None,
             **kwargs,
     ) -> str:
+        """根据用户输入选择历史记录并返回格式化提示词。"""
 
         if self.tool_registry:
-            tool_description = self.tool_registry.get_tools_description()  # 获取关于所有工具的详细描述
+            tool_description = self.tool_registry.get_tools_description()
         else:
             tool_description = "None"
 
@@ -51,4 +54,3 @@ class ReActContextManager(ContextManagerBase):
             input_text=input_text,
             semantic_str="",
         )
-

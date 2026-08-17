@@ -1,23 +1,21 @@
-# 定义了统一的消息格式，便于智能体和模型之间信息传递的标准化，还有用于历史记录的功能
+"""定义 Agent 与模型之间传递的统一消息格式。"""
+
 from datetime import datetime
 from typing import Dict, Optional, Any, Literal
 
-from pydantic import BaseModel #A base class for creating Pydantic models.
+from pydantic import BaseModel
 
-MessageRole = Literal["user", "assistant", "system", "tool"] # 定义了消息，只能取几个类型之一个
-# 这直接对应 OpenAI API 的规范，保证了类型安全
+MessageRole = Literal["user", "assistant", "system", "tool"]
 
-class Message(BaseModel): #基于BaseModel，封装了各种类型检查机制
-    """消息类"""
+class Message(BaseModel):
+    """封装消息角色、正文以及可选的时间和元数据。"""
 
     content: str
     role: MessageRole
     timestamp: datetime = None
-    metadata: Optional[Dict[str, Any]] = None # 这个变量值要么是指定的类型，要么是None # Metadata（元数据）是关于智能体（Agent）自身的结构化描述信息
-    #这个时间戳和元数据为未来日志等功能留出空间
+    metadata: Optional[Dict[str, Any]] = None
 
-    def __init__(self, content:str, role:MessageRole, **kwargs): #**kwargs 允许你将不定数量的键值对，作为一个字典传入函数。** 会将多余的关键字参数打包成一个字典。
-        # 调用父类提供的初始化方法
+    def __init__(self, content:str, role:MessageRole, **kwargs):
         super().__init__(
             content = content,
             role = role,
@@ -26,12 +24,12 @@ class Message(BaseModel): #基于BaseModel，封装了各种类型检查机制
         )
 
     def to_dict(self) -> Dict[str, Any]:
-        """转换为字典格式(OpenAI API格式)"""
+        """返回模型接口所需的 role/content 字典。"""
         return {
             "role": self.role,
             "content": self.content,
         }
 
     def __str__(self) -> str:
-        """转换成字典"""
+        """返回适合日志阅读的单行消息文本。"""
         return f"[{self.role}] {self.content}"

@@ -1,3 +1,5 @@
+"""使用真实模型客户端验证 ReAct Agent 的手工冒烟脚本。"""
+
 from project1.agents.types.react_agent_v2 import ReactAgentV2
 from dotenv import load_dotenv
 

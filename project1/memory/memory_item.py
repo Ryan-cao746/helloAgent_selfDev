@@ -1,4 +1,5 @@
-# 记忆条目
+"""定义各类记忆实现共享的单条记忆数据结构。"""
+
 from datetime import datetime
 from typing import Literal
 
@@ -6,17 +7,13 @@ from pydantic import BaseModel
 
 
 class MemoryItem(BaseModel):
-    """
-    记忆条目
-    重要的字段：创建时间戳和过期时间戳，ttl的值由config给出
-    """
+    """带来源角色、重要性和可选过期时间的记忆条目。"""
 
-    id: str     # 现在id是必填字段
+    id: str
     role:Literal["user", "assistant", "tool", "system"] = "user"
     content: str
     importance: float = 1.0
     created_at: datetime = None
-    # 显式设置默认值为 None，明确告知 Pydantic 该字段是可选的
     expires_at: datetime | None = None
 
     def __init__(self,
@@ -24,8 +21,8 @@ class MemoryItem(BaseModel):
                  content:str,
                  importance:float = 1.0,
                  role:Literal["user", "assistant", "tool", "system"] = "user",
-                 created_at:datetime = None, # 创建的时间戳
-                 expires_at:datetime = None  # 过期的时间戳
+                 created_at:datetime = None,
+                 expires_at:datetime = None
                  ):
         super().__init__(
             id = id,

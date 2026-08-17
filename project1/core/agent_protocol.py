@@ -1,15 +1,21 @@
+"""定义模型决策协议以及 Agent 运行轨迹的数据结构。"""
+
+from datetime import datetime, timezone
 from typing import Literal, TypeAlias
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, field_validator
 
-from project1.tools.base import ToolCall
+from project1.tools.base import ToolCall, ToolResult
+from project1.core.run_lifecycle import (
+    RunErrorCode,
+    RunStatus,
+    RunTransition,
+)
 
 
 class ToolDecision(BaseModel):
-    """A validated request from the model to execute one tool.
-    序列化的工具执行请求
-    """
+    """模型返回的工具调用决策；额外字段会被拒绝。"""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -19,11 +25,9 @@ class ToolDecision(BaseModel):
 
 
 class FinishDecision(BaseModel):
-    """A validated request from the model to finish the current run.
-    序列化的轮次结束请求
-    """
+    """模型返回的结束决策，包含面向用户的非空最终回答。"""
 
-    model_config = ConfigDict(extra="forbid")   # 严格参数校验，禁止出现额外的参数值
+    model_config = ConfigDict(extra="forbid")
 
     kind: Literal["finish"]
     reasoning_summary: str = ""
@@ -32,6 +36,7 @@ class FinishDecision(BaseModel):
     @field_validator("final_answer")
     @classmethod
     def strip_final_answer(cls, value: str) -> str:
+        """去除回答首尾空白，并拒绝清理后的空字符串。"""
         value = value.strip()
         if not value:
             raise ValueError("final_answer 不能为空")
@@ -44,29 +49,36 @@ _DECISION_ADAPTER = TypeAdapter(AgentDecision)
 
 
 def parse_agent_decision(text: str) -> AgentDecision:
-    """Parse one strict JSON decision returned by the model."""
+    """将模型返回的 JSON 文本解析为受严格校验的决策对象。"""
     return _DECISION_ADAPTER.validate_json(text.strip())
 
 
 class AgentStepRecord(BaseModel):
-    """One model decision and its optional tool observation.
-    模型响应的步骤记录，用于回退
-    """
-
+    """记录一步模型决策、耗时以及可选的工具结果或错误。"""
 
     step_number: int = Field(ge=1)
-    decision: AgentDecision
-    tool_result: str | None = None
+    decision: AgentDecision | None = None
+    llm_duration_ms: float = Field(default=0, ge=0)
+    tool_result: ToolResult | None = None
+    error: str | None = None
 
 
 class AgentRunResult(BaseModel):
-    """Structured result retained by the agent after every run.
-    每次运行的结构化结果
-    """
+    """单次运行的完整结果，供调用方、轨迹展示和故障定位使用。"""
 
     run_id: str = Field(default_factory=lambda: str(uuid4()))
-    status: Literal["finished", "failed"]
+    status: RunStatus
     output: str
     step_count: int = Field(default=0, ge=0)
     error: str | None = None
+    error_code: RunErrorCode | None = None
+    started_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    finished_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    duration_ms: float = Field(default=0, ge=0)
+    context_duration_ms: float = Field(default=0, ge=0)
     steps: list[AgentStepRecord] = Field(default_factory=list)
+    transitions: list[RunTransition] = Field(default_factory=list)

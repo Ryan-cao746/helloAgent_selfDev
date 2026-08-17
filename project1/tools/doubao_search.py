@@ -1,3 +1,5 @@
+"""将豆包网页搜索 API 封装为受安全策略约束的网络工具。"""
+
 import json
 import os
 from typing import Any, Dict, List, Optional
@@ -5,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import ValidationError
 
 from project1.web.web_search import SearchRequestParams, send_search_request
-from project1.tools.base import Tool, ToolParameter
+from project1.tools.base import Tool, ToolParameter, ToolPolicy
 
 
 DEFAULT_SEARCH_BASE_URL = "https://open.feedcoopapi.com/search_api/web_search"
@@ -34,9 +36,15 @@ class DouBaoSearchTool(Tool):
                 "当问题涉及时效性信息，或对事实的置信度较低、需要外部来源佐证时使用。"
                 "当前工具仅声明 web 搜索参数，不用于图片搜索。"
             ),
+            policy=ToolPolicy(
+                access="network",
+                max_output_chars=20_000,
+            ),
+            arguments_model=SearchRequestParams,
         )
 
     def run(self, parameters: Dict[str, Any]) -> str:
+        """校验搜索参数、调用远程接口并返回 JSON 搜索结果。"""
         if not self.api_key:
             raise ValueError(
                 "豆包搜索 API Key 未配置，请传入 api_key 或设置 "
@@ -68,6 +76,7 @@ class DouBaoSearchTool(Tool):
         return json.dumps(result_data, ensure_ascii=False)
 
     def get_parameters(self) -> List[ToolParameter]:
+        """返回豆包网页搜索 API 支持的参数说明。"""
         return [
             ToolParameter(
                 name="query",

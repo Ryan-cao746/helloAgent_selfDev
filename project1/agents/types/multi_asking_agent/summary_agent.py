@@ -1,3 +1,4 @@
+"""使用模型将工作记忆转换为经过校验的情景记忆变更批次。"""
 
 from project1.agents.types.base import BaseComplexAgent
 from project1.agents.types.multi_asking_agent.extract_json_from_answer import extract_json_from_answer
@@ -7,12 +8,10 @@ from project1.core.message import Message
 from project1.memory.memory_manager import MemoryManager
 from project1.memory.memory_operation import MemoryOperationBatch
 
-# 为记忆处理专门设计的摘要Agent
-# 不会试图让它操作语义记忆
-
 system_prompt = SUMMARY_PROMPT_TEMPLATE
 
 class SummaryAgent(BaseComplexAgent):
+    """整理对话记忆；仅操作情景记忆，不修改语义资料库。"""
 
     def __init__(
             self,
@@ -29,7 +28,7 @@ class SummaryAgent(BaseComplexAgent):
         self.debug_mode = debug_mode
 
     def run(self, input_text: str, **kwargs) -> str:
-        """运行。这里提示词需要重做"""
+        """生成、校验并原子应用一批情景记忆变更。"""
         selected_episodic_memory = self.memory_manager.get_all_by_type(type=self.memory_manager.episodic_memory_name)
         working_memory = self.memory_manager.get_all_by_type(type=self.memory_manager.working_memory_name)
 
@@ -48,8 +47,7 @@ class SummaryAgent(BaseComplexAgent):
 
             data = extract_json_from_answer(response)
 
-            # 先用operation_batch接受、构造、校验获取的json数组内容
-            operation_batch = MemoryOperationBatch.model_validate(data) # 直接传入字典，自动解包，从任意对象提取数据，并启动整个校验引擎
+            operation_batch = MemoryOperationBatch.model_validate(data)
             if not operation_batch.operations:
                 print("没有找到 operations 数组")
                 return  "没有找到 operations 数组"
@@ -63,7 +61,6 @@ class SummaryAgent(BaseComplexAgent):
                         f"content={operation.content}\n"
                     )
 
-            # memory_manager使用校验好的数据
             self.memory_manager.apply_operation_batch(
                 type=self.memory_manager.episodic_memory_name,
                 batch=operation_batch,
@@ -78,7 +75,7 @@ class SummaryAgent(BaseComplexAgent):
                 print("====== 更改后情景记忆 ======")
                 print("\n".join(episodic_str_list))
         except Exception as e:
-            # 单次摘要失败不应终止整场会话，记录后降级为失败结果
+            # 摘要属于会话后的附加处理，失败时返回可诊断结果而不抛出到会话层。
             print(f"摘要Agent处理失败: {e}")
             return f"摘要处理失败: {e}"
 

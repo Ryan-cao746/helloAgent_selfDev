@@ -1,3 +1,5 @@
+"""定义所有内存式记忆实现共享的存储和清理接口。"""
+
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
@@ -7,18 +9,19 @@ from project1.config.memory_config import MemoryConfig
 from project1.memory.memory_item import MemoryItem
 
 class BaseMemory(ABC):
+    """以内存字典保存条目的记忆基类。"""
     def __init__(self, memory_config:MemoryConfig = None):
         self.memory_config = memory_config
-        self.memories: Dict[str, MemoryItem] = dict()  # 主键搭配记忆体的形式
+        self.memories: Dict[str, MemoryItem] = dict()
 
     @abstractmethod
     def add(self, memory_item:MemoryItem) -> str:
-        """添加记忆"""
+        """保存一条记忆，并由具体实现执行所需的容量策略。"""
         pass
 
     @abstractmethod
     def retrieve(self, query:str, limit:int=5, **kwargs) -> List[MemoryItem]:
-        """记忆检索"""
+        """按具体实现的相关性策略检索记忆。"""
         pass
 
     def _expire_old_memories(self):
@@ -44,8 +47,9 @@ class BaseMemory(ABC):
 
 
     def get_all_memories(self) -> Dict[str, MemoryItem]:
+        """返回当前以 ID 为键的内存存储。"""
         return self.memories
 
     def replace_all_memories(self, memories: Dict[str, MemoryItem]):
-        """一次性替换内存存储，作为当前内存实现的提交点。"""
+        """一次性替换内存存储，作为批量操作的提交点。"""
         self.memories = memories

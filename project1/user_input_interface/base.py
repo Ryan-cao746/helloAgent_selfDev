@@ -1,9 +1,13 @@
+"""定义会话输入和高风险工具确认所需的界面抽象。"""
+
 from abc import ABC, abstractmethod
 from typing import Literal
 
+from project1.tools.base import ToolCall, ToolPolicy
+
 
 class InputParams:
-    """参数传递类"""
+    """一次用户输入及其会话控制类型。"""
     def __init__(
             self,
             input_text: str,
@@ -13,9 +17,17 @@ class InputParams:
         self.input_type = input_type
 
 class UserInputInterface(ABC):
-    """输入界面接口，用于适配不同的输入传递策略"""
+    """适配命令行或其他前端的用户输入与工具确认接口。"""
 
     @abstractmethod
     def get_input(self) -> InputParams:
-        """获取适用于llm的用户提示输入"""
+        """读取下一条用户输入或会话控制指令。"""
         pass
+
+    def confirm_tool_call(
+            self,
+            tool_call: ToolCall,
+            policy: ToolPolicy,
+    ) -> bool:
+        """确认高风险工具调用；默认拒绝，具体界面可覆盖。"""
+        return False

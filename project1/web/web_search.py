@@ -1,3 +1,5 @@
+"""封装豆包网页搜索 API 的请求参数、响应模型和请求发送逻辑。"""
+
 from typing import Any, Dict, List, Literal, Optional
 
 import requests
@@ -26,11 +28,11 @@ class QueryControl(BaseModel):
 
 
 class SearchRequestParams(BaseModel):
-    """请求参数"""
+    """豆包网页搜索请求参数。"""
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
-    query: str = Field(..., alias="Query", min_length=1)
+    query: str = Field(..., alias="Query", min_length=1, max_length=100)
     search_type: Literal["web"] = Field("web", alias="SearchType")
     count: int = Field(10, alias="Count", ge=1, le=50)
     filter: Optional[SearchFilter] = Field(None, alias="Filter")
@@ -53,10 +55,11 @@ class SearchRequestParams(BaseModel):
     )
 
     def to_json(self) -> str:
+        """按接口字段别名序列化为 JSON，并忽略空值字段。"""
         return self.model_dump_json(by_alias=True, exclude_none=True)
 
 class ResponseMetadata(BaseModel):
-    """响应元数据"""
+    """接口响应元数据。"""
     request_id: str = Field(..., alias = "RequestId")
     action:str = Field(..., alias = "Action")
     version:str = Field(..., alias = "Version")
@@ -65,7 +68,7 @@ class ResponseMetadata(BaseModel):
     error:Optional[Dict[str, Any]] = Field(None, alias = "Error")
 
 class WebItem(BaseModel):
-    """数据项"""
+    """单条网页搜索结果条目。"""
     id: str = Field(..., alias = "Id")
     sort_id:int = Field(..., alias = "SortId")
     title: str = Field(..., alias = "Title")
@@ -83,12 +86,12 @@ class WebItem(BaseModel):
     ruyi_info:Optional[Dict[str, Any]] = Field(None, alias="RuyiInfo") # WebItem形式的 火山如意 结果类型
 
 class SearchContext(BaseModel):
-    """搜索上下文信息"""
+    """搜索上下文信息。"""
     search_type: str = Field(..., alias = "SearchType")
     origin_query: str = Field(..., alias = "OriginQuery")
 
 class ResponseResult(BaseModel):
-    """响应结果"""
+    """响应结果数据。"""
     result_count: int = Field(..., alias = "ResultCount")
     web_results: Optional[List[WebItem]] = Field(None, alias = "WebResults")
     # 这里没写image相关参数
@@ -99,11 +102,12 @@ class ResponseResult(BaseModel):
 
 
 class SearchResponseParams(BaseModel):
-    """响应参数"""
+    """接口响应参数。"""
     response_metadata: ResponseMetadata = Field(..., alias = "ResponseMetadata")
     result:Optional[ResponseResult] = Field(None, alias = "Result")
 
 class FinalSearchResult(BaseModel):
+    """统一的搜索请求结果，保留成功状态或具体失败原因。"""
     params: Optional[SearchResponseParams] = None
     state:Literal["Success", "Error"]
     error: Optional[str] = None
@@ -114,7 +118,7 @@ def send_search_request(
         api_key: str,
         timeout: float = 30,
 ) -> FinalSearchResult:
-    """发送请求"""
+    """发送搜索请求并解析响应，成功或业务错误都会返回结构化结果。"""
     payload = search_params.model_dump(by_alias=True, exclude_none=True)
     custom_headers = {
         "Authorization": f"Bearer {api_key}"
@@ -146,6 +150,7 @@ def send_search_request(
         return FinalSearchResult(state="Error", error=str(e))
 
 def extract_json_from_response(response:Response) -> Dict[str, Any]:
+    """从 HTTP 响应中提取 JSON；解析失败时返回空字典。"""
     try:
         json_response = response.json()
         return json_response

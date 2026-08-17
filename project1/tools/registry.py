@@ -1,14 +1,24 @@
-# 工具注册表类，作工具管理之用，提供注册、发现、执行等多种功能
-import csv
-import json
-from collections.abc import Callable, Mapping
-from typing import Any, Dict, List, Optional, Union
+"""注册、发现并按安全策略执行工具。"""
 
-from project1.tools.base import Tool, ToolCall, ToolParameter
+from collections.abc import Callable
+from time import perf_counter
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ValidationError
+
+from project1.tools.base import (
+    Tool,
+    ToolCall,
+    ToolExecutionPolicy,
+    ToolParameter,
+    ToolPolicy,
+    ToolResult,
+)
+from project1.tools.security import limit_text, redact_sensitive_text
 
 
 class FunctionTool(Tool):
-    """Adapt a function to the same dictionary-based contract as Tool."""
+    """将普通函数适配为与 ``Tool`` 一致的字典参数接口。"""
 
     def __init__(
             self,
@@ -16,35 +26,66 @@ class FunctionTool(Tool):
             description: str,
             func: Callable[[Any], str],
             parameters: Optional[List[ToolParameter]] = None,
+            policy: ToolPolicy | None = None,
+            arguments_model: type[BaseModel] | None = None,
     ):
-        super().__init__(name, description)
+        super().__init__(
+            name,
+            description,
+            policy=policy,
+            arguments_model=arguments_model,
+        )
         self.func = func
-        self.uses_parameter_dict = parameters is not None
-        self.parameters = parameters or [
-            ToolParameter(
-                name="input",
-                type="str",
-                description="工具输入",
-                required=True,
-            )
-        ]
+        self.uses_parameter_dict = (
+            parameters is not None or arguments_model is not None
+        )
+        if parameters is not None:
+            self.parameters = parameters
+        elif arguments_model is not None:
+            schema = arguments_model.model_json_schema()
+            required = set(schema.get("required", []))
+            self.parameters = [
+                ToolParameter(
+                    name=name,
+                    type=str(field_schema.get("type", "any")),
+                    description=str(field_schema.get("description", "")),
+                    required=name in required,
+                    default=field_schema.get("default"),
+                )
+                for name, field_schema in schema.get("properties", {}).items()
+            ]
+        else:
+            self.parameters = [
+                ToolParameter(
+                    name="input",
+                    type="str",
+                    description="工具输入",
+                    required=True,
+                )
+            ]
 
     def run(self, parameters: Dict[str, Any]) -> str:
+        """按函数声明方式传入参数字典或单个 ``input`` 值。"""
         if self.uses_parameter_dict:
             return self.func(parameters)
         return self.func(parameters["input"])
 
     def get_parameters(self) -> List[ToolParameter]:
+        """返回显式参数或由 Pydantic 模型推导出的参数定义。"""
         return self.parameters
 
 class ToolRegistry:
-    """HelloAgents工具注册表"""
+    """管理工具，并统一执行权限检查、参数校验和结果脱敏。"""
 
-    def __init__(self):
+    def __init__(
+            self,
+            execution_policy: ToolExecutionPolicy | None = None,
+    ):
         self._tools: Dict[str, Tool] = {}
+        self.execution_policy = execution_policy or ToolExecutionPolicy()
 
     def register_tool(self, tool: Tool):
-        """注册Tool对象"""
+        """按名称注册工具；同名工具会被新实例覆盖。"""
         if tool.name in self._tools:
             print(f"工具'{tool.name}'已存在，将被覆盖")
         self._tools[tool.name] = tool
@@ -56,109 +97,118 @@ class ToolRegistry:
             description: str,
             func: Callable[[Any], str],
             parameters: Optional[List[ToolParameter]] = None,
+            policy: ToolPolicy | None = None,
+            arguments_model: type[BaseModel] | None = None,
     ):
-        """将函数适配为 Tool；旧式单字符串回调仍然受支持。"""
-        self.register_tool(FunctionTool(name, description, func, parameters))
+        """将函数注册为工具，同时兼容旧式单字符串回调。"""
+        self.register_tool(FunctionTool(
+            name,
+            description,
+            func,
+            parameters,
+            policy,
+            arguments_model,
+        ))
 
     def get_tool(self, name:str) -> Optional[Tool]:
+        """按名称返回已注册工具；不存在时返回 ``None``。"""
         return self._tools.get(name)
 
-    # 工具发现与管理机制
     def get_tools_description(self) -> str:
-        """获得所有工具的描述字符串，合并为统一的描述字符串"""
+        """返回当前执行策略允许暴露给模型的工具说明。"""
         descriptions = []
-        # 获取Tool对象描述
-        for tool in self._tools.values(): #遍历字典的值序列
-            descriptions.append(tool.get_full_description()) # 用我写的新函数，获取完整描述
+        for tool in self._tools.values():
+            if tool.policy.access not in self.execution_policy.allowed_access:
+                continue
+            descriptions.append(tool.get_full_description())
 
-        return "\n".join(descriptions) if descriptions else "" # 这个join的意思是用换行符连接descriptions数组中的所有记录
+        return "\n".join(descriptions) if descriptions else ""
 
-    def create_tool_call(
+    def execute_tool_call_structured(
             self,
-            tool_name: str,
-            parameters: Union[str, Mapping[str, Any]],
-    ) -> ToolCall:
-        """把模型输出转换成统一的 ToolCall。"""
-        tool_name = tool_name.strip()
-        tool = self.get_tool(tool_name)
+            tool_call: ToolCall,
+            confirmed: bool = False,
+    ) -> ToolResult:
+        """执行完整安全管线并返回可观测的结构化结果。"""
+        started = perf_counter()
+        tool = self.get_tool(tool_call.tool_name)
         if tool is None:
-            raise ValueError(f"未找到工具 {tool_name}")
+            return self._failure_result(
+                tool_call.tool_name,
+                status="failed",
+                error_code="tool_not_found",
+                error=f"未找到工具 {tool_call.tool_name}",
+                started=started,
+            )
 
-        parsed_parameters = self._parse_tool_parameters(parameters, tool)
-        validated_parameters = self._validate_tool_parameters(tool, parsed_parameters)
-        return ToolCall(tool_name=tool_name, parameters=validated_parameters)
+        if tool.policy.access not in self.execution_policy.allowed_access:
+            return self._failure_result(
+                tool_call.tool_name,
+                status="denied",
+                error_code="policy_denied",
+                error=f"安全策略不允许执行 {tool.policy.access} 类型工具",
+                started=started,
+            )
 
-    def execute_tool_call(self, tool_call: ToolCall) -> str:
-        """执行已经结构化的工具调用。"""
+        needs_confirmation = (
+            tool.policy.confirmation_required
+            and tool.name not in self.execution_policy.preapproved_tools
+        )   # 判断相关工具是否需要用户确认
+        if needs_confirmation and not confirmed:
+            return self._failure_result(
+                tool_call.tool_name,
+                status="confirmation_required",
+                error_code="confirmation_required",
+                error="该工具需要用户确认后才能执行",
+                started=started,
+            )
+
         try:
-            tool = self.get_tool(tool_call.tool_name)
-            if tool is None:
-                raise ValueError(f"未找到工具 {tool_call.tool_name}")
-
             validated_parameters = self._validate_tool_parameters(tool, tool_call.parameters)
+        except Exception as error:
+            return self._failure_result(
+                tool_call.tool_name,
+                status="failed",
+                error_code="invalid_parameters",
+                error=str(error),
+                started=started,
+            )
+
+        try:
             result = tool.run(validated_parameters)
-            return f"工具{tool_call.tool_name} 执行结果:\n {result}"
-        except Exception as e:
-            return f"工具执行失败:{str(e)}"
+        except Exception as error:
+            return self._failure_result(
+                tool_call.tool_name,
+                status="failed",
+                error_code="execution_failed",
+                error=str(error),
+                started=started,
+            )
 
-    def execute_tool_call_from_text(
-            self,
-            tool_name: str,
-            parameters: Union[str, Mapping[str, Any]],
-    ) -> str:
-        """解析 ReAct 文本动作，然后通过结构化入口执行。"""
-        try:
-            tool_call = self.create_tool_call(tool_name, parameters)
-        except Exception as e:
-            return f"工具执行失败:{str(e)}"
-        return self.execute_tool_call(tool_call)
-
-    def _parse_tool_parameters(
-            self,
-            parameters: Union[str, Mapping[str, Any]],
-            tool: Optional[Tool] = None,
-    ) -> Dict[str, Any]:
-        """优先解析 JSON 对象，同时兼容旧的 key=value 格式。"""
-        if isinstance(parameters, Mapping):
-            return dict(parameters)
-        if not isinstance(parameters, str):
-            raise TypeError("工具参数必须是 JSON 对象、字典或 key=value 字符串")
-
-        parameters = parameters.strip()
-        if not parameters:
-            return {}
-
-        try:
-            parsed = json.loads(parameters)
-        except json.JSONDecodeError:
-            parsed = None
-
-        if parsed is not None:
-            if not isinstance(parsed, dict):
-                raise ValueError("JSON 工具参数必须是对象")
-            return parsed
-
-        pairs = next(csv.reader([parameters], skipinitialspace=True))
-        if all("=" in pair for pair in pairs):
-            return {
-                key.strip(): self._parse_legacy_value(value.strip())
-                for key, value in (pair.split("=", 1) for pair in pairs)
-            }
-
-        declared_parameters = tool.get_parameters() if tool else []
-        if len(declared_parameters) == 1:
-            return {declared_parameters[0].name: parameters}
-        raise ValueError("工具参数格式错误，请使用 JSON 对象")
-
-    @staticmethod
-    def _parse_legacy_value(value: str) -> Any:
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError:
-            return value
+        safe_output = redact_sensitive_text(str(result))
+        bounded_output, truncated, original_length = limit_text(
+            safe_output,
+            tool.policy.max_output_chars,
+        )
+        return ToolResult(
+            tool_name=tool_call.tool_name,
+            status="success",
+            output=bounded_output,
+            duration_ms=(perf_counter() - started) * 1000,
+            truncated=truncated,
+            original_length=original_length,
+        )
 
     @staticmethod
     def _validate_tool_parameters(tool: Tool, parameters: Dict[str, Any]) -> Dict[str, Any]:
+        if tool.arguments_model is not None:
+            try:
+                arguments = tool.arguments_model.model_validate(parameters)
+            except ValidationError as error:
+                details = error.errors(include_url=False, include_input=False)
+                raise ValueError(f"工具参数校验失败: {details}") from error
+            return arguments.model_dump(mode="python")
+
         declared = {parameter.name: parameter for parameter in tool.get_parameters()}
         unknown = set(parameters) - set(declared)
         if unknown:
@@ -172,4 +222,19 @@ class ToolRegistry:
                 validated[name] = parameter.default
         return validated
 
+    @staticmethod
+    def _failure_result(
+            tool_name: str,
+            status: str,
+            error_code: str,
+            error: str,
+            started: float,
+    ) -> ToolResult:
+        return ToolResult(
+            tool_name=tool_name,
+            status=status,
+            error_code=error_code,
+            error=redact_sensitive_text(error),
+            duration_ms=(perf_counter() - started) * 1000,
+        )
 
