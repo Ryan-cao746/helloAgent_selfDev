@@ -69,6 +69,7 @@ _ALLOWED_TRANSITIONS: dict[RunState | None, set[RunState]] = {
     },
     "retrying": {"deciding", "failed", "cancelled", "timed_out"},
     "executing_tool": {
+        "executing_tool",   # 同一决策内依次执行多个工具时的自环转换
         "deciding",
         "waiting_confirmation",
         "failed",

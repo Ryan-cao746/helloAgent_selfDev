@@ -257,178 +257,189 @@ class ReactAgentV2(BaseComplexAgent):
                         error="tool_registry is None",
                     )
 
-                if tool_call_count >= self.max_tool_calls:
-                    tool_result = ToolResult(
-                        tool_name=decision.tool_call.tool_name,
-                        status="denied",
-                        error_code="call_budget_exceeded",
-                        error="已达到本轮工具调用次数上限",
-                        duration_ms=0,
-                    )
-                    steps.append(AgentStepRecord(
-                        step_number=step_number,
-                        decision=decision,
-                        llm_duration_ms=llm_duration_ms,
-                        tool_result=tool_result,
-                    ))
-                    return self._complete_run(
-                        input_text=input_text,
-                        controller=controller,
-                        status="failed",
-                        output="工具调用次数已达到安全上限。",
-                        step_count=step_number,
-                        steps=steps,
-                        error_code="tool_call_budget_exceeded",
-                        error="maximum tool calls reached",
-                    )
+                tool_results: list[ToolResult] = []
+                for tool_call in decision.tool_calls:
+                    if tool_call_count >= self.max_tool_calls:
+                        tool_result = ToolResult(
+                            tool_name=tool_call.tool_name,
+                            status="denied",
+                            error_code="call_budget_exceeded",
+                            error="已达到本轮工具调用次数上限",
+                            duration_ms=0,
+                        )
+                        tool_results.append(tool_result)
+                        steps.append(AgentStepRecord(
+                            step_number=step_number,
+                            decision=decision,
+                            llm_duration_ms=llm_duration_ms,
+                            tool_results=tool_results,
+                        ))
+                        return self._complete_run(
+                            input_text=input_text,
+                            controller=controller,
+                            status="failed",
+                            output="工具调用次数已达到安全上限。",
+                            step_count=step_number,
+                            steps=steps,
+                            error_code="tool_call_budget_exceeded",
+                            error="maximum tool calls reached",
+                        )
 
-                call_key = json.dumps(
-                    decision.tool_call.model_dump(),
-                    ensure_ascii=False,
-                    sort_keys=True,
-                    separators=(",", ":"),
-                )
-                repeated_count = repeated_tool_calls.get(call_key, 0)
-                if repeated_count >= self.max_repeated_tool_calls:
-                    tool_result = ToolResult(
-                        tool_name=decision.tool_call.tool_name,
-                        status="denied",
-                        error_code="call_budget_exceeded",
-                        error="相同工具和参数的重复调用次数已达到上限",
-                        duration_ms=0,
+                    call_key = json.dumps(
+                        tool_call.model_dump(),
+                        ensure_ascii=False,
+                        sort_keys=True,
+                        separators=(",", ":"),
                     )
-                    steps.append(AgentStepRecord(
-                        step_number=step_number,
-                        decision=decision,
-                        llm_duration_ms=llm_duration_ms,
-                        tool_result=tool_result,
-                    ))
-                    return self._complete_run(
-                        input_text=input_text,
-                        controller=controller,
-                        status="failed",
-                        output="检测到重复工具调用，已停止本轮任务。",
-                        step_count=step_number,
-                        steps=steps,
-                        error_code="repeated_tool_call_limit",
-                        error="repeated tool call limit reached",
-                    )
+                    repeated_count = repeated_tool_calls.get(call_key, 0)
+                    if repeated_count >= self.max_repeated_tool_calls:
+                        tool_result = ToolResult(
+                            tool_name=tool_call.tool_name,
+                            status="denied",
+                            error_code="call_budget_exceeded",
+                            error="相同工具和参数的重复调用次数已达到上限",
+                            duration_ms=0,
+                        )
+                        tool_results.append(tool_result)
+                        steps.append(AgentStepRecord(
+                            step_number=step_number,
+                            decision=decision,
+                            llm_duration_ms=llm_duration_ms,
+                            tool_results=tool_results,
+                        ))
+                        return self._complete_run(
+                            input_text=input_text,
+                            controller=controller,
+                            status="failed",
+                            output="检测到重复工具调用，已停止本轮任务。",
+                            step_count=step_number,
+                            steps=steps,
+                            error_code="repeated_tool_call_limit",
+                            error="repeated tool call limit reached",
+                        )
 
-                if total_tool_output_chars >= self.max_total_tool_output_chars:
-                    tool_result = ToolResult(
-                        tool_name=decision.tool_call.tool_name,
-                        status="denied",
-                        error_code="output_budget_exceeded",
-                        error="本轮工具输出总量已达到上限",
-                        duration_ms=0,
-                    )
-                    steps.append(AgentStepRecord(
-                        step_number=step_number,
-                        decision=decision,
-                        llm_duration_ms=llm_duration_ms,
-                        tool_result=tool_result,
-                    ))
-                    return self._complete_run(
-                        input_text=input_text,
-                        controller=controller,
-                        status="failed",
-                        output="工具输出总量已达到安全上限。",
-                        step_count=step_number,
-                        steps=steps,
-                        error_code="tool_output_budget_exceeded",
-                        error="tool output budget reached",
-                    )
+                    if total_tool_output_chars >= self.max_total_tool_output_chars:
+                        tool_result = ToolResult(
+                            tool_name=tool_call.tool_name,
+                            status="denied",
+                            error_code="output_budget_exceeded",
+                            error="本轮工具输出总量已达到上限",
+                            duration_ms=0,
+                        )
+                        tool_results.append(tool_result)
+                        steps.append(AgentStepRecord(
+                            step_number=step_number,
+                            decision=decision,
+                            llm_duration_ms=llm_duration_ms,
+                            tool_results=tool_results,
+                        ))
+                        return self._complete_run(
+                            input_text=input_text,
+                            controller=controller,
+                            status="failed",
+                            output="工具输出总量已达到安全上限。",
+                            step_count=step_number,
+                            steps=steps,
+                            error_code="tool_output_budget_exceeded",
+                            error="tool output budget reached",
+                        )
 
-                # 上述情况检查全部通过，进入工具调用环节
-                tool_call_count += 1
-                repeated_tool_calls[call_key] = repeated_count + 1
+                    # 上述情况检查全部通过，进入工具调用环节
+                    tool_call_count += 1
+                    repeated_tool_calls[call_key] = repeated_count + 1
 
-                controller.transition(
-                    "executing_tool",
-                    reason=decision.tool_call.tool_name,
-                )
-                controller.checkpoint()
-                tool_result = self.tool_registry.execute_tool_call_structured(
-                    decision.tool_call
-                )
-                controller.checkpoint()
-
-                if tool_result.status == "confirmation_required":   # 如果需要用户确认
                     controller.transition(
-                        "waiting_confirmation",
-                        reason=decision.tool_call.tool_name,
+                        "executing_tool",
+                        reason=tool_call.tool_name,
                     )
-                    tool = self.tool_registry.get_tool(
-                        decision.tool_call.tool_name
+                    controller.checkpoint()
+                    tool_result = self.tool_registry.execute_tool_call_structured(
+                        tool_call
                     )
-                    if self.confirmation_handler is not None and tool is not None:
-                        try:
-                            confirmed = self.confirmation_handler(
-                                decision.tool_call,
-                                tool.policy,
-                            )
-                        except Exception as error:
-                            confirmed = False
-                            confirmation_error = (
-                                "用户确认失败: "
-                                f"{redact_sensitive_text(str(error))}"
-                            )
-                        else:
-                            confirmation_error = "用户拒绝执行该工具"
+                    controller.checkpoint()
 
-                        controller.checkpoint()
-                        if confirmed:
-                            controller.transition(
-                                "executing_tool",
-                                reason="tool call confirmed",
-                            )
-                            tool_result = (
-                                self.tool_registry.execute_tool_call_structured(
-                                    decision.tool_call,
-                                    confirmed=True,
+                    if tool_result.status == "confirmation_required":   # 如果需要用户确认
+                        controller.transition(
+                            "waiting_confirmation",
+                            reason=tool_call.tool_name,
+                        )
+                        tool = self.tool_registry.get_tool(
+                            tool_call.tool_name
+                        )
+                        if self.confirmation_handler is not None and tool is not None:
+                            try:
+                                confirmed = self.confirmation_handler(
+                                    tool_call,
+                                    tool.policy,
                                 )
-                            )
-                            controller.checkpoint()
-                        else:
-                            tool_result = ToolResult(
-                                tool_name=decision.tool_call.tool_name,
-                                status="denied",
-                                error_code="confirmation_denied",
-                                error=confirmation_error,
-                                duration_ms=tool_result.duration_ms,
-                            )
+                            except Exception as error:
+                                confirmed = False
+                                confirmation_error = (
+                                    "用户确认失败: "
+                                    f"{redact_sensitive_text(str(error))}"
+                                )
+                            else:
+                                confirmation_error = "用户拒绝执行该工具"
 
-                if tool_result.status == "success" and tool_result.output is not None:
-                    remaining_output_chars = (
-                        self.max_total_tool_output_chars - total_tool_output_chars
-                    )
-                    if len(tool_result.output) > remaining_output_chars:
-                        tool_result = tool_result.model_copy(update={
-                            "output": tool_result.output[:remaining_output_chars],
-                            "truncated": True,
-                            "original_length": (
-                                tool_result.original_length
-                                if tool_result.original_length is not None
-                                else len(tool_result.output)
-                            ),
-                        })
-                    total_tool_output_chars += len(tool_result.output)
+                            controller.checkpoint()
+                            if confirmed:
+                                controller.transition(
+                                    "executing_tool",
+                                    reason="tool call confirmed",
+                                )
+                                tool_result = (
+                                    self.tool_registry.execute_tool_call_structured(
+                                        tool_call,
+                                        confirmed=True,
+                                    )
+                                )
+                                controller.checkpoint()
+                            else:
+                                tool_result = ToolResult(
+                                    tool_name=tool_call.tool_name,
+                                    status="denied",
+                                    error_code="confirmation_denied",
+                                    error=confirmation_error,
+                                    duration_ms=tool_result.duration_ms,
+                                )
+
+                    if tool_result.status == "success" and tool_result.output is not None:
+                        remaining_output_chars = (
+                            self.max_total_tool_output_chars - total_tool_output_chars
+                        )
+                        if len(tool_result.output) > remaining_output_chars:
+                            tool_result = tool_result.model_copy(update={
+                                "output": tool_result.output[:remaining_output_chars],
+                                "truncated": True,
+                                "original_length": (
+                                    tool_result.original_length
+                                    if tool_result.original_length is not None
+                                    else len(tool_result.output)
+                                ),
+                            })
+                        total_tool_output_chars += len(tool_result.output)
+
+                    tool_results.append(tool_result)
 
                 controller.transition(
                     "deciding",
-                    reason=f"tool result: {tool_result.status}",
+                    reason="tool results received",
                 )
                 steps.append(AgentStepRecord(
                     step_number=step_number,
                     decision=decision,
                     llm_duration_ms=llm_duration_ms,
-                    tool_result=tool_result,
+                    tool_results=tool_results,
                 ))
+                observations = "\n\n".join(
+                    f"第{index}个工具调用结果:\n{result.to_observation()}"
+                    for index, result in enumerate(tool_results, start=1)
+                )
                 messages.extend([
                     Message(content=decision.model_dump_json(), role="assistant"),
                     Message(
                         content=(
-                            f"{tool_result.to_observation()}\n"
+                            f"{observations}\n"
                             "请根据结果返回下一项合法 JSON 决策。"
                         ),
                         role="user",

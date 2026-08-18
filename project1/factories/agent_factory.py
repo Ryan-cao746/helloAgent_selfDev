@@ -18,6 +18,7 @@ def create_multi_turn_conversation(
     config: Config,
     user_input_interface: UserInputInterface,
     tool_registry: ToolRegistry,
+    debug_mode: bool = False,
 ) -> MultiTurnConversation:
     """创建共享模型客户端、记忆组件和工具注册表的多轮会话。"""
 
@@ -55,6 +56,7 @@ def create_multi_turn_conversation(
     summary_agent = SummaryAgent(
         llm_client=llm,
         memory_manager=memory_manager,
+        debug_mode=config.debug,
     )
 
     return MultiTurnConversation(

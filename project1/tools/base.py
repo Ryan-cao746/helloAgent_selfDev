@@ -126,7 +126,7 @@ class Tool(ABC):
             name: str,
             description: str,
             policy: ToolPolicy | None = None,
-            arguments_model: type[BaseModel] | None = None,
+            arguments_model: type[BaseModel] | None = None, # 需要提供负责参数校验的数据模型
     ):
         self.name = name
         self.description = description

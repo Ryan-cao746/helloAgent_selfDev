@@ -21,7 +21,7 @@ class ToolDecision(BaseModel):
 
     kind: Literal["tool"]
     reasoning_summary: str = ""
-    tool_call: ToolCall
+    tool_calls: list[ToolCall] = Field(min_length=1)
 
 
 class FinishDecision(BaseModel):
@@ -59,7 +59,7 @@ class AgentStepRecord(BaseModel):
     step_number: int = Field(ge=1)
     decision: AgentDecision | None = None
     llm_duration_ms: float = Field(default=0, ge=0)
-    tool_result: ToolResult | None = None
+    tool_results: list[ToolResult] = Field(default_factory=list)
     error: str | None = None
 
 

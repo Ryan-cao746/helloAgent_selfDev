@@ -11,12 +11,17 @@ REACT_PROMPT_TEMPLATE = """
 需要调用工具时返回：
 {{
   "kind": "tool",
-  "reasoning_summary": "简短说明为什么需要该工具",
-  "tool_call": {{
-    "tool_name": "工具名称",
-    "parameters": {{"参数名称": "参数值"}}
-  }}
+  "reasoning_summary": "简短说明为什么需要这些工具",
+  "tool_calls": [
+    {{
+      "tool_name": "工具名称",
+      "parameters": {{"参数名称": "参数值"}}
+    }}
+  ]
 }}
+
+当一次任务需要多个工具时，可以按执行顺序将多个工具放入 tool_calls 数组；
+Agent 会严格按该顺序依次执行，并在全部完成后一次性返回结果。
 
 已经能够回答问题时返回：
 {{
