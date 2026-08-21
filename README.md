@@ -5,6 +5,13 @@ An application sourced from the code of HelloAgent, used for learning.
 
 以下记录按时间降序排列，最新改动优先展示，并保留各阶段当时的设计与实现状态。
 
+### 2026-08-21
+- 目前完善了配置系统，写了file_config配置类，用于设置文件读写的工作目录。
+- 文件读写的目录设置的是以其作为根目录读/写。
+- 这个config的使用模式是先由file_config加载配置，然后创建文件工具时直接通过初始化注入到工具类型中
+- config里workspace_root可以写为绝对或相对目录
+- 已经可以完成简单的工作任务
+
 ### 2026-08-18
 - 新增了程序记忆模块。如需编辑则在skills中添加文档。
 - 新增了文件读写、目录浏览操作工具。

@@ -4,6 +4,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from project1.tools.base import Tool, ToolPolicy, ToolParameter
+from project1.tools.built_in._paths import resolve_path
 
 
 class ModifyFileArguments(BaseModel):
@@ -13,7 +14,7 @@ class ModifyFileArguments(BaseModel):
 
 
 class ModifyFile(Tool):
-    def __init__(self):
+    def __init__(self, workspace_root: Path | None = None):
         super().__init__(
             name="modify_file",
             description="修改或者新建文件，会创建不存在的父目录",
@@ -24,7 +25,9 @@ class ModifyFile(Tool):
             ),
             arguments_model=ModifyFileArguments
         )
-        self.project_root = self._find_project_root()
+        self.workspace_root = (
+            workspace_root or self._find_project_root()
+        ).resolve()
 
     @staticmethod
     def _find_project_root() -> Path:
@@ -36,11 +39,8 @@ class ModifyFile(Tool):
         return Path.cwd()
 
     def _resolve_path(self, raw_path: str) -> Path:
-        """展开 ~ 并将相对路径解析到项目根目录之下。"""
-        path = Path(raw_path).expanduser()
-        if not path.is_absolute():
-            path = self.project_root / path
-        return path.resolve()
+        """展开 ~ 并将相对路径解析到工作目录之下，校验不越界。"""
+        return resolve_path(self.workspace_root, raw_path)
 
     def run(self, parameters: Dict[str, Any]) -> str:
         try:
@@ -56,7 +56,7 @@ class ModifyFile(Tool):
             ToolParameter(
                 name="path",
                 type="str",
-                description="目标文件的路径，支持相对路径（相对于项目根目录）和 ~ 简写",
+                description="目标文件的路径，支持相对路径（相对于工作目录）和 ~ 简写",
                 required=True,
             ),
             ToolParameter(

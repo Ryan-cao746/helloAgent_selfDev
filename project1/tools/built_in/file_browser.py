@@ -3,6 +3,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field
 
 from project1.tools.base import Tool, ToolPolicy, ToolParameter
+from project1.tools.built_in._paths import resolve_path
 
 
 class FileBrowserArguments(BaseModel):
@@ -14,10 +15,10 @@ class FileBrowserArguments(BaseModel):
 
 
 class FileBrowser(Tool):
-    def __init__(self):
+    def __init__(self, workspace_root: Path | None = None):
         super().__init__(
             name="file_browser",
-            description="文件浏览工具，用于查看目录结构、获取项目根目录以及按行读取文件内容",
+            description="文件浏览工具，用于查看目录结构、获取工作目录以及按行读取文件内容",
             policy=ToolPolicy(
                 access="read_only",
                 requires_confirmation=False,  # 只读
@@ -25,7 +26,9 @@ class FileBrowser(Tool):
             ),
             arguments_model=FileBrowserArguments,
         )
-        self.project_root = self._find_project_root()
+        self.workspace_root = (
+            workspace_root or self._find_project_root()
+        ).resolve()
 
     @staticmethod
     def _find_project_root() -> Path:
@@ -37,17 +40,14 @@ class FileBrowser(Tool):
         return Path.cwd()
 
     def _resolve_path(self, raw_path: str) -> Path:
-        """展开 ~ 并将相对路径解析到项目根目录之下。"""
-        path = Path(raw_path).expanduser()
-        if not path.is_absolute():
-            path = self.project_root / path
-        return path.resolve()
+        """展开 ~ 并将相对路径解析到工作目录之下，校验不越界。"""
+        return resolve_path(self.workspace_root, raw_path)
 
     def run(self, parameters: Dict[str, Any]) -> str:
         try:
             operation = parameters["operation_type"]
             if operation == "pwd":
-                return str(self.project_root)
+                return str(self.workspace_root)
 
             path = self._resolve_path(parameters["path"])
             if operation == "ls":
@@ -83,12 +83,15 @@ class FileBrowser(Tool):
             end_line: int | None,
     ) -> str:
         if not path.exists():
+            print(f"文件不存在: {path}")
             return f"文件不存在: {path}"
         if path.is_dir():
+            print(f"目标是目录而不是文件: {path}")
             return f"目标是目录而不是文件: {path}"
         try:
             content = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
+            print(f"无法以 UTF-8 读取（可能是二进制文件）: {path}")
             return f"无法以 UTF-8 读取（可能是二进制文件）: {path}"
 
         lines = content.splitlines()
@@ -97,8 +100,10 @@ class FileBrowser(Tool):
         end = end_line or total
 
         if start > total:
+            print(f"起始行 {start} 超出文件总行数 {total}")
             return f"起始行 {start} 超出文件总行数 {total}"
         if end < start:
+            print(f"结束行 {end} 不能小于起始行 {start}")
             return f"结束行 {end} 不能小于起始行 {start}"
         end = min(end, total)
 
@@ -114,13 +119,13 @@ class FileBrowser(Tool):
             ToolParameter(
                 name="operation_type",
                 type="Literal['ls', 'pwd', 'cat']",
-                description="操作类型：ls 列出目标目录下的文件和目录；pwd 获取项目根目录；cat 读取指定文件的内容",
-                required=True,
+                description="操作类型：ls 列出目标目录下的文件和目录；pwd 获取工作目录；cat 读取指定文件的内容",
+                required=True,  
             ),
             ToolParameter(
                 name="path",
                 type="str",
-                description="目标路径，支持相对路径（相对于项目根目录）和 ~ 简写；pwd 操作可省略",
+                description="目标路径，支持相对路径（相对于工作目录）和 ~ 简写；pwd 操作可省略",
                 required=False,
                 default=".",
             ),
