@@ -37,7 +37,7 @@ def main():
 
     multi_asking_agent = create_multi_turn_conversation(
         user_input_interface=user_input_interface,
-        config=Config(debug=True),
+        config=Config(debug=True, max_tool_calls=6),
         tool_registry=tool_registry,
     )
 

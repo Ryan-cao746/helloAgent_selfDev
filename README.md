@@ -5,6 +5,30 @@ An application sourced from the code of HelloAgent, used for learning.
 
 以下记录按时间降序排列，最新改动优先展示，并保留各阶段当时的设计与实现状态。
 
+### 至2026-08-31
+- 完成了mcp客户端的搭建，同时也有一个示例的mcp服务器
+- 完成了mcp适配。参考了HelloAgents的方法，为mcp客户端创建后台进程和事件循环，从而适配整个项目同步的框架
+- 新建了mcp_wrapper_tool。这个tool导入mcp对工具的描述，使单个工具适配于Agent的原生同步工具，而执行是异步执行的
+- 新建了mcp同步桥，维护一个配备独立事件循环的后台线程，通过主线程向其中插入协程函数来异步执行mcp的工具
+- 其线程调度如下：
+```
+主线程 start()
+  -> _ready.clear()
+  -> 启动后台线程
+  -> _ready.wait()  阻塞等待
+
+后台线程
+  -> 创建 asyncio loop
+  -> 执行 _start_client_async()
+       -> 成功：self._client = MCPClient(...)
+       -> 失败：self._startup_error = error
+       -> finally: _ready.set()
+
+主线程被唤醒
+  -> 如果 _startup_error 不为空，抛 RuntimeError
+  -> 否则说明 MCP client 已经连接好
+```
+- 计划后续建立基于mcp的skills系统
 ### 2026-08-21
 - 目前完善了配置系统，写了file_config配置类，用于设置文件读写的工作目录。
 - 文件读写的目录设置的是以其作为根目录读/写。
