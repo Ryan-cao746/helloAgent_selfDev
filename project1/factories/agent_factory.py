@@ -11,6 +11,7 @@ from project1.memory.memory_manager import MemoryManager
 from project1.memory.memory_types.simple_episodic_memory import SimpleEpisodicMemory
 from project1.memory.memory_types.simple_semantic_memory import SimpleSemanticMemory
 from project1.memory.memory_types.simple_working_memory import SimpleWorkingMemory
+from project1.skill_system.runtime import SkillRuntime
 from project1.user_input_interface.base import UserInputInterface
 from project1.tools.registry import ToolRegistry
 
@@ -18,6 +19,7 @@ def create_multi_turn_conversation(
     config: Config,
     user_input_interface: UserInputInterface,
     tool_registry: ToolRegistry,
+    skill_runtime: SkillRuntime | None = None,      # 添加了skills支持
     debug_mode: bool = False,
 ) -> MultiTurnConversation:
     """创建共享模型客户端、记忆组件和工具注册表的多轮会话。"""
@@ -38,6 +40,7 @@ def create_multi_turn_conversation(
     context_manager = AdvancedContextManager(
         memory_manager=memory_manager,
         tool_registry=tool_registry,
+        skill_runtime=skill_runtime,
     )
 
     conversation_agent = ReactAgentV2(

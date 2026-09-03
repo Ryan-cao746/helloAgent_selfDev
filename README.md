@@ -5,6 +5,17 @@ An application sourced from the code of HelloAgent, used for learning.
 
 以下记录按时间降序排列，最新改动优先展示，并保留各阶段当时的设计与实现状态。
 
+### 2026-09-03
+- 使该Agent具备了真正的skills能力。
+- 该skills能力通过本地扫描.agents/skills/*/SKILL.md 和 project1/skills/*/SKILL.md，解析SKILL.md等
+- 启动时只加载skill元数据
+- 新增了skills Python代码调用能力，可以调用文件中提供的Python代码
+- 这个能力是通过创建子进程，调用命令行运行目标Python代码实现的
+- 注意，cwd设置在skill根目录，工具权限是write且需要确认
+- 同时增加了示例skill demo-word-counter
+- 另外扩展了mcp同步桥，增加了对resource和prompt相关处理协程的同步能力
+- 此外优化了运行过程中的文本提示，提高了非调试模式下运行流程的可见性
+
 ### 2026-09-01
 - 完成了mcp的最终集成
 - 排查了mcp依赖问题，发现是包名称重复，已经修复且可以正常使用

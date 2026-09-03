@@ -6,6 +6,7 @@ from project1.context.base import ContextManagerBase
 from project1.context.prompt_templates.react_prompt_template import REACT_PROMPT_TEMPLATE
 from project1.memory.memory_item import MemoryItem
 from project1.memory.memory_manager import MemoryManager
+from project1.skill_system.runtime import SkillRuntime
 from project1.tools.registry import ToolRegistry
 
 class AdvancedContextManager(ContextManagerBase):
@@ -14,9 +15,10 @@ class AdvancedContextManager(ContextManagerBase):
             self,
             memory_manager: MemoryManager,
             tool_registry: ToolRegistry = None,
-            prompt_template: str = REACT_PROMPT_TEMPLATE
+            prompt_template: str = REACT_PROMPT_TEMPLATE,
+            skill_runtime: SkillRuntime | None = None,  # 增加了注入skills运行时的依赖，使提示词具备列出skills列表的能力
     ):
-        super().__init__(memory_manager, tool_registry, prompt_template)
+        super().__init__(memory_manager, tool_registry, prompt_template, skill_runtime)
 
     def build(
             self,
@@ -60,4 +62,15 @@ class AdvancedContextManager(ContextManagerBase):
         else:
             tool_description = "None"
 
-        return self.prompt_template.format(tool_description=tool_description, history_str=memory_str, input_text=input_text, semantic_str=semantic_str)
+        if self.skill_runtime:  # 向提示词内添加skills的简要描述内容
+            skills_description = self.skill_runtime.describe_available_skills(input_text)
+        else:
+            skills_description = "No skills runtime configured."
+
+        return self.prompt_template.format(
+            tool_description=tool_description,
+            skills_description=skills_description,
+            history_str=memory_str,
+            input_text=input_text,
+            semantic_str=semantic_str,
+        )

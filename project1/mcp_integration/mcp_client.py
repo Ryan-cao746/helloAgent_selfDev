@@ -242,7 +242,7 @@ class MCPClient:
                 "uri": resource.uri,
                 "name": resource.name or "",
                 "description": resource.description or "",
-                "mime_type": getattr(resource, "mimeType", None),
+                "mime_type": self._resource_mime_type(resource),
             }
             for resource in result
         ]
@@ -255,18 +255,33 @@ class MCPClient:
         result = await self.client.read_resource(uri)
 
         # 解析资源内容
+        if isinstance(result, list):
+            if len(result) == 1:
+                return self._resource_content_to_value(result[0])
+            return [self._resource_content_to_value(item) for item in result]
+
         if hasattr(result, 'contents') and result.contents:
             if len(result.contents) == 1:
-                content = result.contents[0]
-                if hasattr(content, 'text'):
-                    return content.text
-                elif hasattr(content, 'blob'):
-                    return content.blob
+                return self._resource_content_to_value(result.contents[0])
             return [
-                getattr(c, 'text', getattr(c, 'blob', str(c)))
-                for c in result.contents
+                self._resource_content_to_value(content)
+                for content in result.contents
             ]
         return None
+
+    @staticmethod
+    def _resource_content_to_value(content: Any) -> Any:
+        if hasattr(content, 'text'):
+            return content.text
+        if hasattr(content, 'blob'):
+            return content.blob
+        return str(content)
+
+    @staticmethod
+    def _resource_mime_type(resource: Any) -> Any:
+        if hasattr(resource, "mime_type"):
+            return resource.mime_type
+        return getattr(resource, "mimeType", None)
 
     async def list_prompts(self) -> List[Dict[str, Any]]:
         """列出所有可用的提示词模板"""

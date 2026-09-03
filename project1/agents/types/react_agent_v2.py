@@ -151,12 +151,14 @@ class ReactAgentV2(BaseComplexAgent):
         controller.checkpoint()
         context_started = perf_counter()
         try:
+            print("====== 正在构建上下文 ======")
             prompt = self.context_manager.build(
                 input_text=input_text,
                 working_memory_name=self.working_memory_name,
                 episodic_memory_name=self.episodic_memory_name,
                 **kwargs,
             )
+            print("====== 上下文构建成功 ======")
         except Exception as error:
             controller.context_duration_ms = (
                 perf_counter() - context_started
@@ -195,12 +197,14 @@ class ReactAgentV2(BaseComplexAgent):
                 controller.transition("deciding", reason="retrying model decision")
 
             try:
+                print("====== 正在调用llm ======")
                 decision = self.llm_client.decide(
                     messages,
                     temperature=temperature,
                     max_retries=self.decision_retries,
                     on_retry=on_decision_retry,
                 )
+                print("====== llm调用成功 ======")
             except LLMClientError as error:
                 llm_duration_ms = (perf_counter() - llm_started) * 1000
                 safe_error = redact_sensitive_text(str(error))
@@ -224,6 +228,7 @@ class ReactAgentV2(BaseComplexAgent):
             controller.checkpoint()
 
             if isinstance(decision, FinishDecision):
+                print("====== 本轮对话结束 ======")
                 steps.append(AgentStepRecord(
                     step_number=step_number,
                     decision=decision,
@@ -239,6 +244,7 @@ class ReactAgentV2(BaseComplexAgent):
                 )
 
             if isinstance(decision, ToolDecision):
+                print("====== 正在执行工具调用链 ======")
                 if self.tool_registry is None:
                     steps.append(AgentStepRecord(
                         step_number=step_number,
@@ -259,6 +265,7 @@ class ReactAgentV2(BaseComplexAgent):
 
                 tool_results: list[ToolResult] = []
                 for tool_call in decision.tool_calls:
+                    print(f"====== 正在执行工具调用 {tool_call.tool_name} ======")
                     if tool_call_count >= self.max_tool_calls:
                         tool_result = ToolResult(
                             tool_name=tool_call.tool_name,
@@ -420,6 +427,7 @@ class ReactAgentV2(BaseComplexAgent):
                         total_tool_output_chars += len(tool_result.output)
 
                     tool_results.append(tool_result)
+                    print("====== 工具链调用完成 ======")
 
                 controller.transition(
                     "deciding",

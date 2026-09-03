@@ -93,6 +93,28 @@ class SyncMCPClientBridge:
         """同步调用一个 MCP tool。"""
         return self._submit(lambda: self._call_tool_async(tool_name, arguments))
 
+    def list_resources(self) -> list[dict[str, Any]]:
+        """同步列出 MCP server 中注册的 resources。"""
+        return self._submit(self._list_resources_async)
+
+    def read_resource(self, uri: str) -> Any:
+        """同步读取一个 MCP resource。"""
+        return self._submit(lambda: self._read_resource_async(uri))
+
+    def list_prompts(self) -> list[dict[str, Any]]:
+        """同步列出 MCP server 中注册的 prompts。"""
+        return self._submit(self._list_prompts_async)
+
+    def get_prompt(
+            self,
+            prompt_name: str,
+            arguments: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """同步获取一个 MCP prompt。"""
+        return self._submit(
+            lambda: self._get_prompt_async(prompt_name, arguments)
+        )
+
     def close(self) -> None:
         """关闭 MCP 连接、停止后台事件循环并等待线程退出。"""
         self._closed = True
@@ -185,6 +207,30 @@ class SyncMCPClientBridge:
         if self._client is None:
             raise RuntimeError("MCP 同步桥尚未连接")
         return await self._client.call_tool(tool_name, arguments)
+
+    async def _list_resources_async(self) -> list[dict[str, Any]]:
+        if self._client is None:
+            raise RuntimeError("MCP 同步桥尚未连接")
+        return await self._client.list_resources()
+
+    async def _read_resource_async(self, uri: str) -> Any:
+        if self._client is None:
+            raise RuntimeError("MCP 同步桥尚未连接")
+        return await self._client.read_resource(uri)
+
+    async def _list_prompts_async(self) -> list[dict[str, Any]]:
+        if self._client is None:
+            raise RuntimeError("MCP 同步桥尚未连接")
+        return await self._client.list_prompts()
+
+    async def _get_prompt_async(
+            self,
+            prompt_name: str,
+            arguments: dict[str, str] | None = None,
+    ) -> list[dict[str, Any]]:
+        if self._client is None:
+            raise RuntimeError("MCP 同步桥尚未连接")
+        return await self._client.get_prompt(prompt_name, arguments)
 
     def _submit(
             self,

@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 
 from project1.memory.memory_manager import MemoryManager
+from project1.skill_system.runtime import SkillRuntime
 from project1.tools.registry import ToolRegistry
 
 
@@ -14,10 +15,12 @@ class ContextManagerBase(ABC):
             memory_manager:MemoryManager= None,
             tool_registry:ToolRegistry = None,
             prompt_template: str = "",
+            skill_runtime: SkillRuntime | None = None,  # 加了skills运行时
     ):
         self.memory_manager = memory_manager
         self.tool_registry = tool_registry
         self.prompt_template = prompt_template
+        self.skill_runtime = skill_runtime
 
     @abstractmethod
     def build(self, **kwargs) -> str:
