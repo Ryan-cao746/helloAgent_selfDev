@@ -28,7 +28,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from fastmcp import FastMCP
 
-from project1.mcp.mcp_client import MCPClient
+from project1.mcp_integration.mcp_client import MCPClient
 
 """
 凡是没有被放在 target= 指定的子线程函数内部的代码，默认都由“主线程”执行。

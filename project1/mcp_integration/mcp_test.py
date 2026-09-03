@@ -1,5 +1,5 @@
-from project1.mcp.mcp_client import MCPClient
-from project1.mcp.mcp_server import MCPServer
+from project1.mcp_integration.mcp_client import MCPClient
+from project1.mcp_integration.mcp_server import MCPServer
 import asyncio
 
 def create_example_server() -> MCPServer:

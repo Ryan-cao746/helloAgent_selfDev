@@ -196,14 +196,20 @@ class MCPClient:
             tools = result
         else:
             tools = []
-        return [
-            {
-                "name": tool.name,
-                "description": tool.description or "",
-                "input_schema": getattr(tool, "inputSchema", getattr(tool, "input_schema", {})),
-            }
-            for tool in tools
-        ]
+        normalized_tools = []
+        for tool in tools:
+            input_schema = getattr(tool, "input_schema", None)
+            if input_schema is None:
+                input_schema = getattr(tool, "inputSchema", {})
+
+            normalized_tools.append(
+                {
+                    "name": tool.name,
+                    "description": tool.description or "",
+                    "input_schema": input_schema,
+                }
+            )
+        return normalized_tools
 
     async def call_tool(self, tool_name:str, arguments:Dict[str, Any]) -> Any:
         """调用MCP工具"""

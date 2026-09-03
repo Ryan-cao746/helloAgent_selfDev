@@ -53,7 +53,9 @@ class MultiTurnConversation:
             input_text = user_input.input_text
 
             try:
+                print("====== 正在启动本轮对话 ======")
                 answer = self.conversation_agent.run(input_text=input_text)
+                print("====== 本轮对话运行成功 ======")
             except Exception as e:
                 # 单轮失败降级处理，后续轮次仍可继续。
                 print(f"本轮对话Agent执行失败: {e}")
@@ -70,7 +72,9 @@ class MultiTurnConversation:
                     and run_result.status == "finished"
             ):
                 try:
+                    print("====== 正在整理本轮对话内容 ======")
                     self.summary_agent.run(input_text="default")
+                    print("====== 对话整理完成 ======")
                 except Exception as e:
                     # 记忆整理失败不影响已经生成的用户回答。
                     print(f"本轮记忆整理失败: {e}")

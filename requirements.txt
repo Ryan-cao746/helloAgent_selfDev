@@ -6,4 +6,6 @@ scikit-learn>=1.3.0
 jieba>=0.42.1
 
 requests
-fastmcp
+# MCP 集成依赖：适配当前 FastMCP 4 / MCP SDK 2 系列。
+fastmcp>=4.0.0,<5.0.0
+mcp>=2.0.0,<3.0.0

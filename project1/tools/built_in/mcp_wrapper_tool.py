@@ -7,13 +7,13 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from project1.mcp.sync_bridge import SyncMCPClientBridge
+from project1.mcp_integration.sync_bridge import SyncMCPClientBridge
 from project1.tools.base import Tool, ToolParameter, ToolPolicy
 from project1.tools.registry import ToolRegistry
 
 
 class MCPWrappedTool(Tool):
-    """将 MCP server 中的单个 tool 包装为可注册的同步 Tool。"""
+    """将 MCP server 中的单个 tool 包装为可注册的同步 Tool。主要是Tool的部分参数加上一个bridge，run方法调用bridge"""
 
     def __init__(
             self,
@@ -49,7 +49,7 @@ class MCPWrappedTool(Tool):
 def register_mcp_tools(
         registry: ToolRegistry,
         bridge: SyncMCPClientBridge,
-        prefix: str | None = None,
+        prefix: str | None = None,  # 工具名称前缀，防止重复
         policy: ToolPolicy | None = None,
 ) -> list[str]:
     """列出 MCP tools，将它们包装成普通 Tool 并注册到 registry。"""
