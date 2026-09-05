@@ -22,3 +22,6 @@ Thumbs.db
 # 记忆库运行时数据
 *.db
 *.sqlite3
+
+# BFCL 评估运行产物
+.bfcl_runs/
