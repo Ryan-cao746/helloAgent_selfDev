@@ -5,6 +5,11 @@ An application sourced from the code of HelloAgent, used for learning.
 
 以下记录按时间降序排列，最新改动优先展示，并保留各阶段当时的设计与实现状态。
 
+### 2026-09-05
+- 做了BFCL能力评估系统，但是根据分析，这个系统实际效果非常有限，因为它是针对工具调用方面的能力评估，只需要调用HelloAgentsLLM的decide函数
+- 所以它不是针对整体Agent能力的分析方案。实际作用非常有限
+- 此外将所有test文件加入到版本控制中
+
 ### 2026-09-04
 - 计划做BFCL和GAIA能力评估
 - 计划在以后的Agent实践中弃用本项目使用的将工具信息直接注入到提示词的方式，采用API原生的tool支持和tool_calls支持
